@@ -1,110 +1,2619 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>180° Student Portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <div id="loginScreen" class="login-screen">
-      <div class="login-card">
-        <p class="brand-mark">180°</p>
-        <p class="brand-sub">PSC Academy · Student Portal</p>
-        <h1>Welcome Back</h1>
-        <p class="login-help">Enter your enrolment code to continue.</p>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>180° Student Portal — PSC Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        <label for="codeInput" class="field-label">Enrolment Code</label>
-        <input
-          id="codeInput"
-          class="field-input"
-          type="text"
-          placeholder="e.g. PSC-2026-001"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button id="loginBtn" class="primary-btn">Access Portal</button>
-        <p id="loginError" class="error-text" aria-live="polite"></p>
+  :root {
+    --black: #0a0a0a;
+    --white: #ffffff;
+    --off: #f5f5f3;
+    --border: #e8e8e5;
+    --muted: #888880;
+    --faint: #d0d0cc;
+    --accent: #0a0a0a;
+  }
+
+  html { font-size: 16px; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--off); color: var(--black); min-height: 100vh; overflow-x: hidden; }
+
+  /* Hide Vapi’s injected floating button (we control via our own UI) */
+  
+
+  /* ── LOGIN SCREEN ── */
+  #loginScreen {
+    position: fixed; inset: 0; background: var(--black); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  #loginScreen.out { opacity: 0; pointer-events: none; transform: translateY(-20px); }
+
+  .login-box {
+    width: 100%; max-width: 420px; text-align: center;
+  }
+  .login-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px; color: var(--white); letter-spacing: 0.02em;
+    line-height: 1; margin-bottom: 4px;
+  }
+  .login-sub {
+    font-size: 9px; letter-spacing: 0.35em; text-transform: uppercase;
+    color: rgba(255,255,255,0.35); margin-bottom: 52px;
+  }
+  .login-label {
+    font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+    color: rgba(255,255,255,0.4); margin-bottom: 14px; display: block;
+  }
+  .login-input {
+    width: 100%; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--white); font-family: 'DM Sans', sans-serif;
+    font-size: 16px; letter-spacing: 0.08em; text-align: center;
+    padding: 18px 20px; outline: none;
+    transition: border-color 0.2s;
+    text-transform: uppercase;
+  }
+  .login-input::placeholder { color: rgba(255,255,255,0.2); letter-spacing: 0.15em; }
+  .login-input:focus { border-color: rgba(255,255,255,0.4); }
+  .login-btn {
+    width: 100%; margin-top: 12px; background: var(--white);
+    color: var(--black); border: none; padding: 18px;
+    font-family: 'DM Sans', sans-serif; font-size: 11px;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s, color 0.2s;
+  }
+  .login-btn:hover { background: rgba(255,255,255,0.85); }
+  .login-error {
+    margin-top: 14px; font-size: 11px; color: #e57373;
+    letter-spacing: 0.1em; opacity: 0; transition: opacity 0.3s;
+    min-height: 16px;
+  }
+  .login-error.show { opacity: 1; }
+  .login-note {
+    margin-top: 48px; font-size: 10px; color: rgba(255,255,255,0.2);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── PORTAL ── */
+  #portal { display: none; min-height: 100vh; }
+  #portal.visible { display: block; }
+
+  /* NAV */
+  .p-nav {
+    background: var(--black); padding: 0 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; position: sticky; top: 0; z-index: 50;
+  }
+  .p-nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--white); letter-spacing: 0.04em; }
+  .p-nav-right { display: flex; align-items: center; gap: 24px; }
+  .p-nav-name { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .p-nav-logout { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.25); cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; transition: color 0.2s; }
+  .p-nav-logout:hover { color: rgba(255,255,255,0.6); }
+
+  /* WELCOME HEADER */
+  .p-welcome {
+    background: var(--black); padding: 56px 48px 64px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .p-welcome-tag { font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 14px; }
+  .p-welcome-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 6vw, 80px);
+    color: var(--white); line-height: 0.95; letter-spacing: 0.02em;
+  }
+  .p-welcome-name span { color: rgba(255,255,255,0.25); }
+  .p-welcome-sub { margin-top: 20px; font-size: 15px; color: rgba(255,255,255,0.45); line-height: 1.7; max-width: 520px; font-weight: 300; }
+
+  /* MAIN GRID */
+  .p-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 2px;
+    background: var(--border);
+    padding: 2px;
+  }
+
+  /* CARDS */
+  .p-card {
+    background: var(--white);
+    padding: 48px;
+    display: flex; flex-direction: column;
+    gap: 0;
+    transition: background 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .p-card:hover { background: #fafaf8; }
+  .p-card-num { font-family: 'Bebas Neue', sans-serif; font-size: 80px; color: var(--border); line-height: 1; letter-spacing: -0.02em; margin-bottom: -8px; }
+  .p-card-tag { font-size: 9px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .p-card-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(28px, 3vw, 38px); line-height: 1; letter-spacing: 0.02em; color: var(--black); margin-bottom: 14px; }
+  .p-card-desc { font-size: 14px; color: var(--muted); line-height: 1.75; font-weight: 300; flex: 1; }
+
+  /* CALL CARD — spans full width */
+  .p-card-call {
+    grid-column: 1 / -1;
+    background: var(--black);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 48px;
+    padding: 52px 48px;
+  }
+  .p-card-call:hover { background: #111; }
+  .p-card-call .p-card-tag { color: rgba(255,255,255,0.3); }
+  .p-card-call .p-card-title { color: var(--white); margin-bottom: 10px; font-size: clamp(32px, 4vw, 52px); }
+  .p-card-call .p-card-desc { color: rgba(255,255,255,0.45); }
+  .p-card-call .p-card-num { color: rgba(255,255,255,0.06); }
+
+  .call-btn {
+    background: var(--white); color: var(--black);
+    border: none; padding: 20px 40px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 0.08em;
+    cursor: pointer; white-space: nowrap;
+    display: flex; align-items: center; gap: 12px;
+    transition: background 0.2s, transform 0.15s;
+    flex-shrink: 0;
+  }
+  .call-btn:hover { background: rgba(255,255,255,0.9); transform: scale(1.02); }
+  .call-btn:active { transform: scale(0.98); }
+  .call-btn-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #4caf50;
+    box-shadow: 0 0 0 0 rgba(76,175,80,0.4);
+    animation: pulse-green 2s infinite;
+  }
+  @keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(76,175,80,0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(76,175,80,0); }
+    100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); }
+  }
+
+  /* CALL STATUS */
+  .call-status {
+    display: none; align-items: center; gap: 12px;
+    margin-top: 16px;
+  }
+  .call-status.active { display: flex; }
+  .call-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; animation: pulse-green 1.5s infinite; }
+  .call-status-text { font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 0.1em; }
+  .call-end-btn {
+    background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.5);
+    padding: 8px 16px; font-family: 'DM Sans', sans-serif; font-size: 11px;
+    letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .call-end-btn:hover { border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.8); }
+
+  /* REVIEW PANEL */
+  #reviewPanel {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 200;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #reviewPanel.open { display: flex; }
+  .review-box {
+    background: var(--white); width: 100%; max-width: 640px;
+    max-height: 90vh; overflow-y: auto;
+    padding: 52px 48px;
+    position: relative;
+    animation: slideUp 0.4s ease;
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .review-close {
+    position: absolute; top: 20px; right: 24px;
+    background: none; border: none; font-size: 18px;
+    color: var(--muted); cursor: pointer;
+  }
+  .review-close:hover { color: var(--black); }
+  .review-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; margin-bottom: 6px; }
+  .review-sub { font-size: 13px; color: var(--muted); margin-bottom: 36px; line-height: 1.6; }
+
+  .review-step { margin-bottom: 28px; }
+  .review-step-label { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; display: block; }
+  .review-step-title { font-size: 14px; color: var(--black); margin-bottom: 10px; font-weight: 500; }
+
+  .upload-zone {
+    border: 1px dashed var(--faint); padding: 32px 24px;
+    text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover { border-color: var(--black); background: var(--off); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-zone-icon { font-size: 28px; margin-bottom: 8px; color: var(--faint); }
+  .upload-zone-text { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; }
+  .upload-zone-preview { display: none; }
+  .upload-zone.has-file .upload-zone-preview { display: block; }
+  .upload-zone.has-file .upload-zone-default { display: none; }
+  .upload-preview-img { width: 100%; max-height: 180px; object-fit: cover; }
+
+  .review-intent {
+    width: 100%; border: 1px solid var(--border); padding: 14px 16px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--black);
+    resize: vertical; min-height: 80px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .review-intent:focus { border-color: var(--black); }
+  .review-intent::placeholder { color: var(--faint); }
+
+  .review-submit {
+    width: 100%; background: var(--black); color: var(--white);
+    border: none; padding: 18px; font-family: 'DM Sans', sans-serif;
+    font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.2s; margin-top: 8px;
+  }
+  .review-submit:hover { background: #222; }
+  .review-submit:disabled { background: var(--faint); cursor: not-allowed; }
+
+  /* FEEDBACK OUTPUT */
+  .feedback-output { display: none; }
+  .feedback-output.show { display: block; }
+  .feedback-header { background: var(--black); color: var(--white); padding: 24px 28px; margin-bottom: 24px; }
+  .feedback-header-name { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+  .feedback-header-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.02em; }
+  .feedback-header-date { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 4px; }
+  .feedback-section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .feedback-section:last-child { border-bottom: none; }
+  .feedback-section-label { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .feedback-section-text { font-size: 14px; color: var(--black); line-height: 1.8; }
+  .feedback-loading { text-align: center; padding: 48px 0; }
+  .feedback-loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--black); margin: 0 3px; animation: blink 1.2s infinite; }
+  .feedback-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .feedback-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100% { opacity: 0.15; } 40% { opacity: 1; } }
+  .feedback-loading-text { font-size: 12px; color: var(--muted); letter-spacing: 0.1em; margin-top: 14px; }
+  .feedback-download {
+    width: 100%; background: none; border: 1px solid var(--border);
+    padding: 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted); cursor: pointer; transition: all 0.2s;
+    margin-top: 16px;
+  }
+  .feedback-download:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+
+  /* RESOURCES PANEL */
+  #resourcesPanel {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 200;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  #resourcesPanel.open { display: flex; }
+  .resources-box {
+    background: var(--white); width: 100%; max-width: 560px;
+    padding: 52px 48px; position: relative;
+    animation: slideUp 0.4s ease;
+  }
+  .resources-close { position: absolute; top: 20px; right: 24px; background: none; border: none; font-size: 18px; color: var(--muted); cursor: pointer; }
+  .resources-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; margin-bottom: 6px; }
+  .resources-sub { font-size: 13px; color: var(--muted); margin-bottom: 36px; }
+  .resource-item { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid var(--border); gap: 16px; }
+  .resource-item:first-of-type { border-top: 1px solid var(--border); }
+  .resource-info { display: flex; flex-direction: column; gap: 3px; }
+  .resource-name { font-size: 14px; color: var(--black); font-weight: 500; }
+  .resource-type { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
+  .resource-dl { background: none; border: 1px solid var(--border); padding: 10px 18px; font-family: 'DM Sans', sans-serif; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .resource-dl:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+
+  /* PROGRESS STRIP */
+  .p-progress {
+    background: var(--white); border-top: 1px solid var(--border);
+    padding: 32px 48px;
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px;
+  }
+  .p-pillar { padding: 20px 16px; background: var(--off); text-align: center; }
+  .p-pillar-n { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--faint); }
+  .p-pillar-name { font-size: 10px; color: var(--muted); letter-spacing: 0.05em; line-height: 1.4; margin-top: 4px; }
+
+  /* FOOTER */
+  .p-footer { padding: 24px 48px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); }
+  .p-footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--muted); }
+  .p-footer-text { font-size: 10px; color: var(--faint); letter-spacing: 0.08em; }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    .p-nav { padding: 0 24px; }
+    .p-welcome { padding: 40px 24px 48px; }
+    .p-grid { grid-template-columns: 1fr; }
+    .p-card { padding: 36px 28px; }
+    .p-card-call { grid-template-columns: 1fr; gap: 28px; }
+    .call-btn { width: 100%; justify-content: center; }
+    .p-progress { grid-template-columns: repeat(3, 1fr); }
+    .review-box, .resources-box { padding: 40px 28px; }
+    .p-footer { flex-direction: column; gap: 8px; text-align: center; }
+  }
+
+  /* Hide Vapi’s injected floating button off-screen (must remain in DOM to work) */
+  .vapi-btn{
+    position: fixed !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+
+  /* ── CALL BUTTON DOT (neutral) ── */
+  .call-btn-dot{
+    background: rgba(255,255,255,0.85) !important;
+    box-shadow: 0 0 0 0 rgba(255,255,255,0.22) !important;
+    animation: pulse-white 2s infinite !important;
+  }
+  @keyframes pulse-white{
+    0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.22); }
+    70% { box-shadow: 0 0 0 8px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  }
+
+  /* ── CALL GLOW OVERLAY (MONO + PURPLE) ── */
+  :root{ --purple: 168, 85, 247; } /* rgb for glow */
+
+  #callOverlay{
+    position: fixed; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 180;
+    padding: 28px;
+    background:
+      radial-gradient(900px 520px at 55% 45%, rgba(255,255,255,0.08), rgba(0,0,0,0) 55%),
+      radial-gradient(820px 540px at 42% 55%, rgba(var(--purple), 0.12), rgba(0,0,0,0) 58%),
+      radial-gradient(1200px 800px at 50% 50%, rgba(0,0,0,0.62), rgba(0,0,0,0.92) 68%),
+      linear-gradient(180deg, rgba(10,10,10,0.76), rgba(10,10,10,0.94));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .28s ease, transform .28s ease;
+    overflow: hidden;
+  }
+  #callOverlay::before{
+    content:"";
+    position:absolute; inset:0;
+    filter: url(#pscNoise);
+    opacity: 0.22;
+    pointer-events:none;
+    mix-blend-mode: overlay;
+  }
+  body.call-active #callOverlay{
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .call-ov-bg180{
+    position:absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-52%, -58%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(220px, 34vw, 520px);
+    letter-spacing: -0.04em;
+    color: rgba(255,255,255,0.06);
+    text-shadow: 0 30px 140px rgba(0,0,0,0.45);
+    pointer-events:none;
+    user-select:none;
+    z-index: 0;
+    line-height: 0.9;
+    white-space: nowrap;
+  }
+  .call-ov-bg180 .deg{
+    font-size: 0.58em;
+    vertical-align: top;
+    margin-left: 0.03em;
+    color: rgba(255,255,255,0.10);
+  }
+
+  body.call-min #callOverlay{
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 16px;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  body.call-min #callOverlay::before{ display:none; }
+  body.call-min .call-ov-bg180{ display:none; }
+  body.call-min .call-overlay-inner{
+    width: 380px;
+    grid-template-columns: 90px 1fr;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(10,10,10,0.76);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+    position: relative;
+    z-index: 1;
+  }
+  body.call-min .call-orb{ width: 72px; height: 72px; }
+  body.call-min .call-orb-ring{ width: 86px; height: 86px; }
+  body.call-min .cap-you, body.call-min .cap-agent{ font-size: 13px; }
+  body.call-min .cap-hint{ display:none; }
+
+  .call-ov-min{
+    position:absolute; top: 16px; right: 16px;
+    width: 44px; height: 44px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.75);
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform .15s ease, background .2s ease, border-color .2s ease;
+    z-index: 2;
+  }
+  .call-ov-min:hover{
+    transform: scale(1.03);
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(255,255,255,0.18);
+  }
+
+  .call-overlay-inner{
+    width: min(920px, 96vw);
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 22px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .call-orb-wrap{
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 240px;
+    height: 240px;
+  }
+
+  .call-orb{
+    width: 210px; height: 210px;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 28% 28%, rgba(255,255,255,0.22), rgba(255,255,255,0.08) 22%, rgba(var(--purple),0.12) 48%, rgba(10,10,10,0.90) 78%),
+      radial-gradient(circle at 70% 65%, rgba(255,255,255,0.12), rgba(0,0,0,0) 55%);
+    box-shadow:
+      0 0 calc(18px + (var(--voice, 0) * 110px)) rgba(var(--purple),0.36),
+      0 0 calc(52px + (var(--voice, 0) * 180px)) rgba(255,255,255,0.06),
+      0 30px 90px rgba(0,0,0,0.55),
+      inset 0 0 70px rgba(255,255,255,0.10);
+    transform: scale(calc(1 + (var(--voice, 0) * 0.07)));
+    transition: transform 80ms linear;
+    position: relative;
+    overflow: hidden;
+  }
+  .call-orb::after{
+    content:"";
+    position:absolute; inset:-48%;
+    background: conic-gradient(from 180deg,
+      rgba(var(--purple),0.00),
+      rgba(var(--purple),0.22),
+      rgba(255,255,255,0.09),
+      rgba(var(--purple),0.00));
+    animation: orbSpin 3.8s linear infinite;
+    opacity: 0.7;
+    filter: blur(12px);
+  }
+  .call-orb::before{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.14), rgba(0,0,0,0) 45%);
+    opacity: 0.9;
+    mix-blend-mode: screen;
+  }
+
+  .call-orb-ring{
+    position:absolute;
+    width: 236px; height: 236px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04) inset,
+      0 0 34px rgba(255,255,255,0.05);
+    transform: scale(calc(1 + (var(--voice, 0) * 0.06)));
+    transition: transform 80ms linear;
+    pointer-events:none;
+  }
+
+  .call-orb-chip{
+    position:absolute;
+    bottom: 18px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 10px;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.78);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+  }
+
+  @keyframes orbSpin { to { transform: rotate(360deg); } }
+
+  .call-captions{
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 22px 22px;
+    border-radius: 18px;
+    color: rgba(255,255,255,0.92);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+    backdrop-filter: blur(10px);
+  }
+
+  .cap-top{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .cap-status{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .cap-pill{
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.72);
+    white-space: nowrap;
+  }
+
+  .cap-line{
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.45;
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+    word-break: break-word;
+  }
+
+  .cap-you{ font-size: 18px; color: rgba(255,255,255,0.92); }
+  .cap-agent{ font-size: 18px; color: rgba(255,255,255,0.78); }
+
+  .cap-actions{ display:flex; justify-content:flex-end; margin-top: 14px; }
+  .cap-end{
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: rgba(255,255,255,0.82);
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform .15s ease, background .2s ease, border-color .2s ease;
+  }
+  .cap-end:hover{
+    transform: scale(1.02);
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(255,255,255,0.22);
+  }
+
+  .cap-hint{
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 14px;
+    letter-spacing: 0.06em;
+  }
+
+  @media (max-width: 768px){
+    .call-overlay-inner{ grid-template-columns: 1fr; }
+    .call-orb-wrap{ width: 100%; height: 200px; }
+    .call-orb{ width: 170px; height: 170px; }
+    .call-orb-ring{ width: 196px; height: 196px; }
+    .cap-you, .cap-agent{ font-size: 16px; }
+    .cap-actions{ justify-content: stretch; }
+    .cap-end{ width: 100%; }
+  }
+
+
+  /* ── EXTRA PANELS (Illusion + Empire) ── */
+  #illusionPanel, #empirePanel{
+    display:none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 200;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #illusionPanel.open, #empirePanel.open{ display:flex; }
+  .illusion-box{ max-width: 760px; }
+  .empire-box{ max-width: 760px; }
+
+  select.review-intent{
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--black);
+    outline: none;
+  }
+  select.review-intent:focus{ border-color: var(--black); }
+
+
+  /* ── CHAT PANEL ── */
+  #chatPanel {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 200;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #chatPanel.open { display: flex; }
+  .chat-box {
+    background: var(--black); width: 100%; max-width: 680px;
+    max-height: 85vh; display: flex; flex-direction: column;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .chat-header {
+    padding: 24px 28px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-header-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 24px;
+    color: var(--white); letter-spacing: 0.04em;
+  }
+  .chat-header-sub {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.35); margin-top: 2px;
+  }
+  .chat-close {
+    background: none; border: none; color: rgba(255,255,255,0.35);
+    font-size: 20px; cursor: pointer; padding: 4px;
+    transition: color 0.2s;
+  }
+  .chat-close:hover { color: var(--white); }
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 16px;
+    min-height: 300px;
+  }
+  .chat-msg {
+    max-width: 85%; line-height: 1.55; font-size: 14px;
+  }
+  .chat-msg.rachel {
+    align-self: flex-start;
+    color: rgba(255,255,255,0.88);
+  }
+  .chat-msg.rachel .chat-msg-name {
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.35); margin-bottom: 6px;
+  }
+  .chat-msg.student {
+    align-self: flex-end;
+    color: rgba(255,255,255,0.6);
+    text-align: right;
+  }
+  .chat-msg.student .chat-msg-name {
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.25); margin-bottom: 6px;
+  }
+  .chat-msg-bubble {
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .chat-msg.student .chat-msg-bubble {
+    background: rgba(255,255,255,0.08);
+  }
+  .chat-typing {
+    align-self: flex-start; color: rgba(255,255,255,0.35);
+    font-size: 12px; letter-spacing: 0.1em; font-style: italic;
+    display: none; padding: 8px 0;
+  }
+  .chat-input-row {
+    padding: 20px 28px; border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex; gap: 12px; align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--white); font-family: 'DM Sans', sans-serif;
+    font-size: 14px; padding: 14px 16px; resize: none;
+    outline: none; min-height: 48px; max-height: 120px;
+    transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: rgba(255,255,255,0.3); }
+  .chat-input::placeholder { color: rgba(255,255,255,0.2); }
+  .chat-send {
+    background: var(--white); color: var(--black); border: none;
+    padding: 14px 20px; font-family: 'DM Sans', sans-serif;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    cursor: pointer; white-space: nowrap; transition: background 0.2s;
+    height: 48px;
+  }
+  .chat-send:hover { background: rgba(255,255,255,0.85); }
+  .chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+  .chat-attach {
+    background: none; border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.5); padding: 0 14px;
+    cursor: pointer; height: 48px; font-size: 18px;
+    transition: border-color 0.2s, color 0.2s; flex-shrink: 0;
+  }
+  .chat-attach:hover { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.8); }
+  .chat-attachment-preview {
+    padding: 10px 28px; border-top: 1px solid rgba(255,255,255,0.06);
+    display: none; align-items: center; gap: 10px;
+  }
+  .chat-attachment-preview.show { display: flex; }
+  .chat-attachment-thumb {
+    width: 48px; height: 48px; object-fit: cover;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .chat-attachment-name {
+    font-size: 11px; color: rgba(255,255,255,0.45);
+    letter-spacing: 0.08em; flex: 1;
+  }
+  .chat-attachment-remove {
+    background: none; border: none; color: rgba(255,255,255,0.3);
+    cursor: pointer; font-size: 14px; padding: 4px;
+    transition: color 0.2s;
+  }
+  .chat-attachment-remove:hover { color: rgba(255,255,255,0.7); }
+  .chat-msg-image {
+    max-width: 100%; max-height: 200px; object-fit: contain;
+    margin-top: 8px; border: 1px solid rgba(255,255,255,0.1);
+    display: block;
+  }
+
+  /* ── NAV TABS ── */
+  .p-nav-tabs { display: flex; align-items: center; gap: 0; margin-left: 40px; }
+  .p-nav-tab {
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3); padding: 0 20px; height: 64px;
+    display: flex; align-items: center; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.2s;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .p-nav-tab:hover { color: rgba(255,255,255,0.7); }
+  .p-nav-tab.active { color: var(--white); border-bottom-color: var(--white); }
+
+  /* ── COURSE VIEW (full portal section) ── */
+  #courseView { display: none; }
+  #courseView.active { display: block; }
+  #dashboardView { display: block; }
+  #dashboardView.hidden { display: none; }
+
+  /* Course header */
+  .course-header {
+    background: var(--black); padding: 40px 48px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .course-header-top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+  .course-header-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 4vw, 56px); color: var(--white); line-height: 1; letter-spacing: 0.02em; }
+  .course-header-sub { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 8px; font-weight: 300; }
+  .course-header-progress { text-align: right; }
+  .course-header-pct { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: var(--white); line-height: 1; }
+  .course-header-pct-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-top: 4px; }
+  .course-header-bar { height: 2px; background: rgba(255,255,255,0.08); margin-top: 0; }
+  .course-header-bar-fill { height: 100%; background: var(--white); transition: width 0.8s ease; }
+
+  /* Course layout */
+  .course-body {
+    display: grid; grid-template-columns: 300px 1fr;
+    min-height: calc(100vh - 64px - 130px);
+  }
+
+  /* Sidebar */
+  .course-sidebar {
+    border-right: 1px solid rgba(255,255,255,0.07);
+    overflow-y: auto; background: var(--black);
+  }
+  .course-module { border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .course-module-header {
+    padding: 20px 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.15s;
+  }
+  .course-module-header:hover { background: rgba(255,255,255,0.02); }
+  .course-module-header.locked { opacity: 0.3; cursor: not-allowed; }
+  .course-module-left { display: flex; align-items: center; gap: 16px; }
+  .course-module-num { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: rgba(255,255,255,0.1); line-height: 1; width: 32px; flex-shrink: 0; }
+  .course-module-title { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75); line-height: 1.35; }
+  .course-module-meta { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 3px; letter-spacing: 0.04em; }
+  .course-module-chevron { font-size: 11px; color: rgba(255,255,255,0.2); transition: transform 0.2s; }
+  .course-module-chevron.open { transform: rotate(180deg); }
+  .course-lesson {
+    padding: 11px 24px 11px 72px; cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    transition: background 0.15s; border-top: 1px solid rgba(255,255,255,0.03);
+  }
+  .course-lesson:hover { background: rgba(255,255,255,0.025); }
+  .course-lesson.active { background: rgba(255,255,255,0.06); }
+  .course-lesson-tick {
+    width: 15px; height: 15px; border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 7px; color: transparent; transition: all 0.2s;
+  }
+  .course-lesson-tick.done { background: var(--white); border-color: var(--white); color: var(--black); }
+  .course-lesson-title { font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.3; }
+  .course-lesson-dur { font-size: 10px; color: rgba(255,255,255,0.2); margin-top: 2px; }
+
+  /* Main viewer */
+  .course-main { background: var(--black); overflow-y: auto; }
+  .course-video-wrap { width: 100%; background: #000; position: relative; }
+  .course-video-wrap::before { content: ''; display: block; padding-top: 56.25%; }
+  .course-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+  .course-video-placeholder {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; flex-direction: column; gap: 14px;
+  }
+  .course-video-placeholder-icon { font-size: 40px; opacity: 0.12; }
+  .course-video-placeholder-text { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.18); }
+  .course-lesson-info {
+    padding: 32px 40px; border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;
+  }
+  .course-lesson-module-tag { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 8px; }
+  .course-lesson-name { font-family: 'Bebas Neue', sans-serif; font-size: clamp(24px, 3vw, 40px); color: var(--white); line-height: 1; letter-spacing: 0.02em; }
+  .course-lesson-duration { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 8px; letter-spacing: 0.06em; }
+  .course-complete-btn {
+    flex-shrink: 0; background: var(--white); color: var(--black); border: none;
+    padding: 13px 24px; font-family: 'DM Sans', sans-serif; font-size: 10px;
+    letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap; margin-top: 20px;
+  }
+  .course-complete-btn:hover { background: rgba(255,255,255,0.85); }
+  .course-complete-btn.done { background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.3); cursor: default; }
+  .course-notes { padding: 32px 40px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .course-notes-label { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 16px; }
+  .course-notes-body { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.85; font-weight: 300; max-width: 640px; }
+  .course-next {
+    margin: 24px 40px 40px; border: 1px solid rgba(255,255,255,0.07);
+    padding: 18px 22px; display: flex; align-items: center;
+    justify-content: space-between; cursor: pointer; transition: background 0.2s;
+  }
+  .course-next:hover { background: rgba(255,255,255,0.03); }
+  .course-next-label { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.22); margin-bottom: 4px; }
+  .course-next-title { font-size: 13px; color: rgba(255,255,255,0.65); font-weight: 500; }
+  .course-next-arrow { font-size: 18px; color: rgba(255,255,255,0.2); }
+
+  @media (max-width: 768px) {
+    .course-body { grid-template-columns: 1fr; }
+    .course-header { padding: 28px 24px 0; }
+    .p-nav-tabs { margin-left: 16px; }
+    .p-nav-tab { padding: 0 12px; font-size: 9px; }
+    .course-lesson-info { flex-direction: column; padding: 20px 24px; }
+    .course-notes { padding: 20px 24px; }
+    .course-next { margin: 16px 24px 32px; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">180°</div>
+    <div class="login-sub">PSC Academy · Student Portal</div>
+    <label class="login-label" for="codeInput">Enter your enrolment code</label>
+    <input class="login-input" id="codeInput" type="text" placeholder="e.g. PSC-2026-001" autocomplete="off" spellcheck="false">
+    <button class="login-btn" id="loginBtn">Access My Portal</button>
+    <div class="login-error" id="loginError">Invalid code. Please check your welcome email.</div>
+    <p class="login-note">Your code was sent in your enrolment confirmation email.</p>
+  </div>
+</div>
+
+<!-- PORTAL -->
+<div id="portal">
+
+  <nav class="p-nav">
+    <div class="p-nav-logo">180°</div>
+    <div class="p-nav-tabs">
+      <button class="p-nav-tab active" id="tabDashboard">Dashboard</button>
+      <button class="p-nav-tab" id="tabCourse">My Course</button>
+    </div>
+    <div class="p-nav-right">
+      <span class="p-nav-name" id="navName"></span>
+      <button class="p-nav-logout" id="logoutBtn">Sign out</button>
+    </div>
+  </nav>
+
+  <div id="dashboardView">
+  <div class="p-welcome">
+    <div class="p-welcome-tag">PSC Academy · 180° Programme</div>
+    <h1 class="p-welcome-name"><span>Welcome back,</span><br><span id="welcomeName">Student</span></h1>
+    <p class="p-welcome-sub">Everything you need to move forward is here. Call Rachel for instant support, submit your work for a detailed review, or access your course materials.</p>
+  </div>
+
+  <div class="p-grid">
+
+    <!-- CALL CARD -->
+    <div class="p-card p-card-call" id="callCard">
+      <div>
+        <div class="p-card-tag">Voice Support · Available Now</div>
+        <div class="p-card-title">Call Rachel</div>
+        <div class="p-card-desc">Get instant answers on technique, design decisions, business questions, or anything from the programme. Rachel's voice agent is available 24 hours a day.</div>
+        <div class="call-status" id="callStatus">
+          <div class="call-status-dot"></div>
+          <span class="call-status-text">Connected — speak now</span>
+          <button class="call-end-btn" id="endCallBtn">End call</button>
+        </div>
+      </div>
+      <button class="call-btn" id="callBtn">
+        <div class="call-btn-dot"></div>
+        Call Rachel
+      </button>
+    </div>
+
+    <!-- CHAT CARD -->
+    <div class="p-card" style="cursor:pointer;" id="chatCard">
+      <div class="p-card-num">02</div>
+      <div class="p-card-tag">Text Support · Available Now</div>
+      <div class="p-card-title">Message Rachel</div>
+      <div class="p-card-desc">Prefer to type? Ask Rachel anything — technique questions, design decisions, business advice, or anything from the programme. Get a direct answer instantly.</div>
+    </div>
+
+    <!-- REVIEW CARD -->
+    <div class="p-card" style="cursor:pointer;" id="reviewCard">
+      <div class="p-card-num">03</div>
+      <div class="p-card-tag">Design Feedback</div>
+      <div class="p-card-title">Submit Your Set</div>
+      <div class="p-card-desc">Upload your before photo and completed set. Receive a full PSC methodology review — eye shape analysis, mapping decisions, texture, symmetry, and exactly what to adjust next.</div>
+    </div>
+
+    <!-- RESOURCES CARD -->
+    <div class="p-card" style="cursor:pointer;" id="resourcesCard">
+      <div class="p-card-num">04</div>
+      <div class="p-card-tag">Course Materials</div>
+      <div class="p-card-title">Your Resources</div>
+      <div class="p-card-desc">Access your full programme materials — frameworks, pricing templates, content systems, CRM setup guides, and all downloadable assets from every pillar.</div>
+    </div>
+
+    <!-- ILLUSION ARCHITECT CARD -->
+    <div class="p-card" style="cursor:pointer;" id="illusionCard">
+      <div class="p-card-num">05</div>
+      <div class="p-card-tag">Pre‑Design Simulator</div>
+      <div class="p-card-title">PSC Illusion Architect™</div>
+      <div class="p-card-desc">Before you touch tweezers, upload a client photo. Get an eye‑shape strategy + a Zone A–D map, Layer 1–3 plan, curl transitions, vector direction, and the WHY behind every decision.</div>
+    </div>
+
+    <!-- EMPIRE ARCHITECT CARD -->
+    <div class="p-card" style="cursor:pointer;" id="empireCard">
+      <div class="p-card-num">06</div>
+      <div class="p-card-tag">Business Audit</div>
+      <div class="p-card-title">180° Empire Architect™</div>
+      <div class="p-card-desc">A PSC‑lens business audit + 6‑month scaling roadmap. Positioning, pricing, offers, content and systems — not generic advice. Clear priorities, weekly actions, and next steps.</div>
+    </div>
+
+  </div>
+
+  <!-- PILLAR PROGRESS -->
+  <div class="p-progress">
+    <div class="p-pillar"><div class="p-pillar-n">01</div><div class="p-pillar-name">Lash Artistry & Design</div></div>
+    <div class="p-pillar"><div class="p-pillar-n">02</div><div class="p-pillar-name">Positioning & Pricing</div></div>
+    <div class="p-pillar"><div class="p-pillar-n">03</div><div class="p-pillar-name">Social Media & Content</div></div>
+    <div class="p-pillar"><div class="p-pillar-n">04</div><div class="p-pillar-name">Marketing & Funnels</div></div>
+    <div class="p-pillar"><div class="p-pillar-n">05</div><div class="p-pillar-name">Systems, CRM & AI</div></div>
+    <div class="p-pillar"><div class="p-pillar-n">06</div><div class="p-pillar-name">Revenue & Scaling</div></div>
+  </div>
+
+  </div><!-- end dashboardView -->
+
+  <!-- COURSE VIEW -->
+  <div id="courseView">
+
+    <div class="course-header">
+      <div class="course-header-top">
+        <div>
+          <div class="course-header-title">Your Programme</div>
+          <div class="course-header-sub">180° PSC Academy · 6 Modules · 18 Lessons</div>
+        </div>
+        <div class="course-header-progress">
+          <div class="course-header-pct" id="overallPct">0%</div>
+          <div class="course-header-pct-label">Complete</div>
+        </div>
+      </div>
+      <div class="course-header-bar"><div class="course-header-bar-fill" id="overallFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="course-body">
+
+      <!-- SIDEBAR -->
+      <div class="course-sidebar" id="moduleSidebar"></div>
+
+      <!-- MAIN -->
+      <div class="course-main" id="courseMain">
+        <div class="course-video-wrap">
+          <div class="course-video-placeholder" id="videoPlaceholder">
+            <div class="course-video-placeholder-icon">&#9654;</div>
+            <div class="course-video-placeholder-text">Select a lesson to begin</div>
+          </div>
+          <iframe id="videoFrame" src="" style="display:none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        </div>
+        <div class="course-lesson-info" id="lessonInfo" style="display:none;">
+          <div>
+            <div class="course-lesson-module-tag" id="lessonModuleTag"></div>
+            <div class="course-lesson-name" id="lessonName"></div>
+            <div class="course-lesson-duration" id="lessonDuration"></div>
+          </div>
+          <button class="course-complete-btn" id="completeBtn">Mark as Complete</button>
+        </div>
+        <div class="course-notes" id="lessonNotes" style="display:none;">
+          <div class="course-notes-label">Lesson Notes</div>
+          <div class="course-notes-body" id="notesBody"></div>
+        </div>
+        <div class="course-next" id="nextLesson" style="display:none;">
+          <div>
+            <div class="course-next-label">Up Next</div>
+            <div class="course-next-title" id="nextLessonTitle"></div>
+          </div>
+          <div class="course-next-arrow">&#8594;</div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- end courseView -->
+
+  <footer class="p-footer">
+    <div class="p-footer-logo">180°</div>
+    <div class="p-footer-text">PSC Academy · All rights reserved · 2026</div>
+  </footer>
+
+</div>
+
+<!-- REVIEW PANEL -->
+<div id="reviewPanel">
+  <div class="review-box">
+    <button class="review-close" id="reviewClose">✕</button>
+    <div id="reviewForm">
+      <div class="review-title">Submit Your Set</div>
+      <div class="review-sub">Upload your photos and describe what you were trying to achieve. Your review will be generated using the full PSC design methodology.</div>
+
+      <div class="review-step">
+        <span class="review-step-label">Step 01</span>
+        <div class="review-step-title">Before photo — natural lashes</div>
+        <div class="upload-zone" id="beforeZone">
+          <input type="file" accept="image/*" id="beforeInput">
+          <div class="upload-zone-default">
+            <div class="upload-zone-icon">↑</div>
+            <div class="upload-zone-text">Click to upload before photo</div>
+          </div>
+          <div class="upload-zone-preview">
+            <img class="upload-preview-img" id="beforePreview" src="" alt="">
+          </div>
+        </div>
+      </div>
+
+      <div class="review-step">
+        <span class="review-step-label">Step 02</span>
+        <div class="review-step-title">Completed set — straight on</div>
+        <div class="upload-zone" id="afterZone">
+          <input type="file" accept="image/*" id="afterInput">
+          <div class="upload-zone-default">
+            <div class="upload-zone-icon">↑</div>
+            <div class="upload-zone-text">Click to upload completed set</div>
+          </div>
+          <div class="upload-zone-preview">
+            <img class="upload-preview-img" id="afterPreview" src="" alt="">
+          </div>
+        </div>
+      </div>
+
+      <div class="review-step">
+        <span class="review-step-label">Step 03 — Optional</span>
+        <div class="review-step-title">What were you trying to achieve?</div>
+        <textarea class="review-intent" id="reviewIntent" placeholder="e.g. I wanted to open the eye and create a wispy wet effect. The client has hooded lids."></textarea>
+      </div>
+
+      <button class="review-submit" id="reviewSubmit">Get My Review</button>
+    </div>
+
+    <div class="feedback-output" id="feedbackOutput">
+      <div class="feedback-loading" id="feedbackLoading">
+        <div>
+          <span class="feedback-loading-dot"></span>
+          <span class="feedback-loading-dot"></span>
+          <span class="feedback-loading-dot"></span>
+        </div>
+        <div class="feedback-loading-text">Analysing your set against PSC methodology...</div>
+      </div>
+      <div id="feedbackResult" style="display:none;">
+        <div class="feedback-header">
+          <div class="feedback-header-name" id="feedbackStudentName"></div>
+          <div class="feedback-header-title">PSC Design Review</div>
+          <div class="feedback-header-date" id="feedbackDate"></div>
+        </div>
+        <div id="feedbackSections"></div>
+        <button class="feedback-download" onclick="window.print()">Download as PDF ↓</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <div id="portal" class="portal hidden">
-      <header class="topbar">
-        <div class="topbar-left">
-          <p class="logo">180°</p>
-          <p class="logo-sub">PSC Academy</p>
-        </div>
-        <div class="topbar-right">
-          <p id="studentName" class="student-name"></p>
-          <button id="logoutBtn" class="ghost-btn">Sign Out</button>
-        </div>
-      </header>
+<!-- RESOURCES PANEL -->
+<div id="resourcesPanel">
+  <div class="resources-box">
+    <button class="resources-close" id="resourcesClose">✕</button>
+    <div class="resources-title">Your Resources</div>
+    <div class="resources-sub">All programme materials. Updated as the course evolves.</div>
 
-      <section class="hero">
-        <div>
-          <p class="hero-tag">Course Dashboard</p>
-          <h2>Your 180° Programme</h2>
-          <p class="hero-copy">
-            Track your progress, open each module, and complete lessons in order.
-          </p>
-        </div>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <p class="stat-label">Progress</p>
-            <p id="progressPct" class="stat-value">0%</p>
+    <div class="resource-item">
+      <div class="resource-info"><div class="resource-name">Curriculum Prospectus</div><div class="resource-type">PDF · All 6 pillars · 14 courses</div></div>
+      <button class="resource-dl" onclick="window.open('180_degrees.pdf')">Download</button>
+    </div>
+    <div class="resource-item">
+      <div class="resource-info"><div class="resource-name">PSC Pricing Framework</div><div class="resource-type">PDF · Pillar 02</div></div>
+      <button class="resource-dl">Download</button>
+    </div>
+    <div class="resource-item">
+      <div class="resource-info"><div class="resource-name">Content Production Workflow</div><div class="resource-type">PDF · Pillar 03</div></div>
+      <button class="resource-dl">Download</button>
+    </div>
+    <div class="resource-item">
+      <div class="resource-info"><div class="resource-name">Client Funnel Map</div><div class="resource-type">PDF · Pillar 04</div></div>
+      <button class="resource-dl">Download</button>
+    </div>
+    <div class="resource-item">
+      <div class="resource-info"><div class="resource-name">CRM Setup Guide</div><div class="resource-type">PDF · Pillar 05</div></div>
+      <button class="resource-dl">Download</button>
+    </div>
+    <div class="resource-item">
+      <div class="resource-info"><div class="resource-name">Revenue Scaling Tracker</div><div class="resource-type">Spreadsheet · Pillar 06</div></div>
+      <button class="resource-dl">Download</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ILLUSION ARCHITECT PANEL -->
+<div id="illusionPanel">
+  <div class="review-box illusion-box">
+    <button class="review-close" id="illusionClose">✕</button>
+
+    <div id="illusionForm">
+      <div class="review-title">PSC Illusion Architect™</div>
+      <div class="review-sub">Upload a clear JPG, PNG, or WEBP client photo and choose the emotional outcome. Best results come from a straight-on image with both eyes clearly visible. You’ll receive a PSC-level design plan: eye shape diagnosis, Zone A–D mapping structure, Layer 1–3 distribution, curl transitions, vector direction, and the WHY behind every decision.</div>
+
+      <div class="review-step">
+        <span class="review-step-label">Step 01</span>
+        <div class="review-step-title">Client photo — straight on (best)</div>
+        <div class="upload-zone" id="clientZone">
+<input type="file" accept="image/jpeg,image/png,image/webp" id="clientInput">
+         <div class="upload-zone-default">
+            <div class="upload-zone-icon">↑</div>
+            <div class="upload-zone-text">Click to upload client photo</div>
           </div>
-          <div class="stat-card">
-            <p class="stat-label">Completed</p>
-            <p id="completedCount" class="stat-value">0 / 0</p>
+          <div class="upload-zone-preview">
+            <img class="upload-preview-img" id="clientPreview" src="" alt="">
           </div>
         </div>
-      </section>
+      </div>
 
-      <main class="course-layout">
-        <aside class="module-sidebar">
-          <div class="sidebar-head">
-            <p>Modules</p>
-          </div>
-          <div id="moduleList"></div>
-        </aside>
+      <div class="review-step">
+        <span class="review-step-label">Step 02</span>
+        <div class="review-step-title">Choose the emotional outcome</div>
+        <select class="review-intent" id="illusionOutcome" style="min-height:auto;">
+          <option value="soft lift">Soft Lift</option>
+          <option value="feline elongation">Feline Elongation</option>
+          <option value="doll expansion">Doll Expansion</option>
+          <option value="fox lift">Fox Lift</option>
+          <option value="siren pull">Siren Pull</option>
+          <option value="wet wispy glamour">Wet Wispy Glamour</option>
+        </select>
+      </div>
 
-        <section class="lesson-view">
-          <div id="lessonEmpty" class="lesson-empty">
-            <p>Select a lesson to begin.</p>
-          </div>
+      <div class="review-step">
+        <span class="review-step-label">Step 03 — Optional</span>
+        <div class="review-step-title">Notes (client request / constraints)</div>
+        <textarea class="review-intent" id="illusionNotes" placeholder="e.g. hooded lids, short natural lashes, wants natural but lifted, dislikes heavy outer corners."></textarea>
+      </div>
 
-          <article id="lessonDetail" class="lesson-detail hidden">
-            <div class="lesson-header">
-              <p id="lessonModuleTag" class="lesson-module-tag"></p>
-              <h3 id="lessonTitle"></h3>
-              <p id="lessonMeta" class="lesson-meta"></p>
-            </div>
-
-            <div class="lesson-video-placeholder">
-              <p>Video placeholder</p>
-              <span>Add Vimeo/YouTube URL later.</span>
-            </div>
-
-            <div class="lesson-notes">
-              <p class="notes-label">Lesson Notes</p>
-              <p id="lessonNotes"></p>
-            </div>
-
-            <div class="lesson-actions">
-              <button id="completeBtn" class="primary-btn">Mark as Complete</button>
-              <button id="nextBtn" class="ghost-btn">Next Lesson</button>
-            </div>
-          </article>
-        </section>
-      </main>
+      <button class="review-submit" id="illusionSubmit">Generate My Design Plan</button>
     </div>
 
-    <script src="./app.js"></script>
-  </body>
+    <div class="feedback-output" id="illusionOutput">
+      <div class="feedback-loading" id="illusionLoading">
+        <div>
+          <span class="feedback-loading-dot"></span>
+          <span class="feedback-loading-dot"></span>
+          <span class="feedback-loading-dot"></span>
+        </div>
+        <div class="feedback-loading-text">Building your PSC design plan…</div>
+      </div>
+
+      <div id="illusionResult" style="display:none;">
+        <div class="feedback-header">
+          <div class="feedback-header-name" id="illusionHeaderName"></div>
+          <div class="feedback-header-title">PSC Illusion Plan</div>
+          <div class="feedback-header-date" id="illusionDate"></div>
+        </div>
+        <div id="illusionSections"></div>
+        <button class="feedback-download" onclick="window.print()">Download as PDF ↓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EMPIRE ARCHITECT PANEL -->
+<div id="empirePanel">
+  <div class="review-box empire-box">
+    <button class="review-close" id="empireClose">✕</button>
+
+    <div id="empireForm">
+      <div class="review-title">180° Empire Architect™</div>
+      <div class="review-sub">Answer a few questions and receive a PSC‑lens business audit + 6‑month scaling roadmap. Clear priorities, weekly actions, and content direction — built for lash designers.</div>
+
+      <div class="review-step">
+        <span class="review-step-label">Step 01</span>
+        <div class="review-step-title">Where are you right now?</div>
+        <textarea class="review-intent" id="empireNow" placeholder="e.g. I do classics + wispy sets. I get 10–15 clients/month. Mostly Instagram. Pricing €90–€140. I want to transition into premium designer sets and education."></textarea>
+      </div>
+
+      <div class="review-step">
+        <span class="review-step-label">Step 02</span>
+        <div class="review-step-title">Offers + pricing (as clear as possible)</div>
+        <textarea class="review-intent" id="empireOffers" placeholder="List your services, durations, and prices."></textarea>
+      </div>
+
+      <div class="review-step">
+        <span class="review-step-label">Step 03</span>
+        <div class="review-step-title">Capacity + goals</div>
+        <textarea class="review-intent" id="empireGoals" placeholder="e.g. 6 clients/week, €6k/month, launch a digital product, build authority content, improve retention."></textarea>
+      </div>
+
+      <div class="review-step">
+        <span class="review-step-label">Step 04 — Optional</span>
+        <div class="review-step-title">Links (Instagram / website)</div>
+        <textarea class="review-intent" id="empireLinks" placeholder="Paste any links you want audited (IG, site, booking page)."></textarea>
+      </div>
+
+      <button class="review-submit" id="empireSubmit">Generate My Audit + Roadmap</button>
+    </div>
+
+    <div class="feedback-output" id="empireOutput">
+      <div class="feedback-loading" id="empireLoading">
+        <div>
+          <span class="feedback-loading-dot"></span>
+          <span class="feedback-loading-dot"></span>
+          <span class="feedback-loading-dot"></span>
+        </div>
+        <div class="feedback-loading-text">Auditing your business through the PSC lens…</div>
+      </div>
+
+      <div id="empireResult" style="display:none;">
+        <div class="feedback-header">
+          <div class="feedback-header-name" id="empireHeaderName"></div>
+          <div class="feedback-header-title">180° Empire Audit</div>
+          <div class="feedback-header-date" id="empireDate"></div>
+        </div>
+        <div id="empireSections"></div>
+        <button class="feedback-download" onclick="window.print()">Download as PDF ↓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+
+// ── SUPABASE CONFIG ──
+const SUPABASE_URL = 'https://xaxcbjrlcuhwpzxbpdzd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhheGNianJsY3Vod3B6eGJwZHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MDkyMDEsImV4cCI6MjA4ODA4NTIwMX0.EtNA6sk04k7LYKESs0IkNGKJQoOtz5hqAz1-ijcK5gw';
+
+async function saveSubmission(agent, inputData, outputData) {
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/submissions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        student_code: currentStudent ? currentStudent.code : 'DEMO',
+        agent: agent,
+        input_json: inputData,
+        output_json: outputData
+      })
+    });
+  } catch(e) { console.warn('Supabase save failed:', e); }
+}
+
+async function fetchDoctrine(category) {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/psc_docs?category=eq.' + category + '&select=title,content', {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      }
+    });
+    const rows = await res.json();
+    if (!rows || !rows.length) return '';
+    return rows.map(function(r) { return '## ' + r.title + '\n' + r.content; }).join('\n\n');
+  } catch(e) { console.warn('Doctrine fetch failed:', e); return ''; }
+}
+
+// ── STUDENT DATABASE ──
+// Add your students here: { code: 'PSC-XXXX-XXX', name: 'First Name' }
+// Students now live in Supabase — no hardcoded list needed
+// To add a student: Supabase → Table Editor → students → Insert Row
+const STUDENTS = []; // kept for fallback only
+
+let currentStudent = null;
+
+// ── LOGIN ──
+document.getElementById('loginBtn').addEventListener('click', attemptLogin);
+document.getElementById('codeInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') attemptLogin();
+});
+
+async function attemptLogin() {
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  const errorEl = document.getElementById('loginError');
+
+  function showPortalForStudent(student) {
+    currentStudent = student;
+    errorEl.classList.remove('show');
+    document.getElementById('loginScreen').classList.add('out');
+    setTimeout(function() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('portal').classList.add('visible');
+      document.getElementById('welcomeName').textContent = student.name;
+      document.getElementById('navName').textContent = student.name;
+    }, 600);
+  }
+
+  // DEMO code fallback
+  if (code === 'DEMO') {
+    showPortalForStudent({ code: 'DEMO', name: 'Student' });
+    return;
+  }
+
+  // Look up student in Supabase
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/students?code=eq.' + encodeURIComponent(code) + '&select=code,name', {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      }
+    });
+    const rows = await res.json();
+    if (rows && rows.length > 0) {
+      showPortalForStudent(rows[0]);
+      return;
+    }
+  } catch(e) {
+    console.warn('Supabase lookup failed:', e);
+  }
+
+  // Invalid code
+  errorEl.classList.add('show');
+  document.getElementById('codeInput').style.borderColor = 'rgba(229,115,115,0.5)';
+  setTimeout(function() {
+    document.getElementById('codeInput').style.borderColor = '';
+  }, 1500);
+}
+
+// ── LOGOUT ──
+document.getElementById('logoutBtn').addEventListener('click', function() {
+  location.reload();
+});
+
+// ── VAPI CALL (FIXED) ──
+const VAPI_PUBLIC_KEY = "14601cea-b2da-4f27-8384-62452e81cb17";
+const VAPI_ASSISTANT_ID = "8199e7db-0c37-47fc-8793-79a28157be6f";
+
+function getVapiInstance() {
+  return window.vapiInstance || null;
+}
+
+document.getElementById("callBtn").addEventListener("click", function () {
+  const inst = getVapiInstance();
+
+  if (!inst || typeof inst.start !== "function") {
+    alert("Voice assistant isn’t ready yet. Refresh the page and allow microphone access.");
+    return;
+  }
+
+  try {
+    inst.start();
+  } catch (e) {
+    console.error("Vapi start() failed:", e);
+    alert("Couldn’t start the call. Check microphone permissions and try again.");
+    return;
+  }
+
+  document.getElementById("callBtn").style.display = "none";
+  document.getElementById("callStatus").classList.add("active");
+});
+
+document.getElementById("endCallBtn").addEventListener("click", function () {
+  const inst = getVapiInstance();
+
+  if (inst && typeof inst.stop === "function") {
+    try {
+      inst.stop();
+    } catch (e) {
+      console.error("Vapi stop() failed:", e);
+    }
+  }
+
+  document.getElementById("callBtn").style.display = "flex";
+  document.getElementById("callStatus").classList.remove("active");
+});
+
+// ── REVIEW PANEL ──
+document.getElementById('reviewCard').addEventListener('click', function() {
+  document.getElementById('reviewPanel').classList.add('open');
+});
+document.getElementById('reviewClose').addEventListener('click', function() {
+  document.getElementById('reviewPanel').classList.remove('open');
+});
+document.getElementById('reviewPanel').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+// Upload previews
+function setupUpload(inputId, zoneId, previewId) {
+  document.getElementById(inputId).addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      document.getElementById(previewId).src = ev.target.result;
+      document.getElementById(zoneId).classList.add('has-file');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+setupUpload('beforeInput', 'beforeZone', 'beforePreview');
+setupUpload('afterInput', 'afterZone', 'afterPreview');
+
+// Submit review
+document.getElementById('reviewSubmit').addEventListener('click', async function() {
+  const beforeFile = document.getElementById('beforeInput').files[0];
+  const afterFile = document.getElementById('afterInput').files[0];
+
+  if (!afterFile) {
+    alert('Please upload at least your completed set photo.');
+    return;
+  }
+
+  const intent = document.getElementById('reviewIntent').value.trim();
+  const reviewDoctrine = await fetchDoctrine('review');
+  const eyesDoctrine = await fetchDoctrine('eyes');
+  const pscContext = [reviewDoctrine, eyesDoctrine].filter(Boolean).join('\n\n');
+
+  document.getElementById('reviewForm').style.display = 'none';
+  document.getElementById('feedbackOutput').classList.add('show');
+  document.getElementById('feedbackLoading').style.display = 'block';
+  document.getElementById('feedbackResult').style.display = 'none';
+
+  try {
+    // Convert images to base64
+    async function toBase64(file) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+
+    const afterB64 = await toBase64(afterFile);
+    const messages = [];
+
+    if (beforeFile) {
+      const beforeB64 = await toBase64(beforeFile);
+      messages.push({
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: beforeFile.type, data: beforeB64 } },
+          { type: 'image', source: { type: 'base64', media_type: afterFile.type, data: afterB64 } },
+          { type: 'text', text: `Student name: ${currentStudent?.name || 'Student'}. ${intent ? 'Design intent: ' + intent : 'No design intent provided.'}` }
+        ]
+      });
+    } else {
+      messages.push({
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: afterFile.type, data: afterB64 } },
+          { type: 'text', text: `Student name: ${currentStudent?.name || 'Student'}. ${intent ? 'Design intent: ' + intent : 'No design intent provided.'}` }
+        ]
+      });
+    }
+
+    const response = await fetch('/api/anthropic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: `You are the 180° PSC Academy design reviewer. You review lash sets submitted by students on behalf of Rachel, the programme founder. You analyse work against the PSC methodology.
+
+When reviewing, structure your feedback exactly as follows using these exact section headings:
+
+EYE SHAPE ASSESSMENT
+Assess the natural eye shape from the before photo (if provided) or infer from the completed set. Identify: lid type, brow projection, eye spacing, any asymmetry.
+
+DESIGN DECISION REVIEW
+Was the mapping appropriate for this eye shape? Were the curl choices correct for the lid type and desired effect? Was length graduation intentional and controlled?
+
+TECHNIQUE EXECUTION
+Assess: density distribution, texture and wispy placement, symmetry between eyes, cleanliness of application, and overall finish quality.
+
+WHAT IS WORKING
+Be specific. Name the exact things that are successful and why they work.
+
+WHAT TO ADJUST
+Be direct and specific. Not general — exact adjustments with the reason behind each one.
+
+PRIORITY FOCUS FOR NEXT SET
+One single most important thing to concentrate on improving.
+
+Tone: direct, knowledgeable, encouraging but honest. You sound like Rachel — premium, precise, and genuinely invested in the student's improvement. Never vague. Always specific to what you actually see in the images.
+
+Format your response as JSON with this exact structure:
+{
+  "eyeShape": "...",
+  "designDecisions": "...",
+  "techniqueExecution": "...",
+  "whatIsWorking": "...",
+  "whatToAdjust": "...",
+  "priorityFocus": "..."
+}`,
+        messages: messages
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error || data?.details || 'Review request failed');
+    const text = data?.content?.[0]?.text || '';
+    if (!text) throw new Error('No review returned');
+
+    let feedback;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      feedback = JSON.parse(clean);
+    } catch {
+      feedback = {
+        eyeShape: 'Analysis complete.',
+        designDecisions: text,
+        techniqueExecution: '',
+        whatIsWorking: '',
+        whatToAdjust: '',
+        priorityFocus: ''
+      };
+    }
+
+    document.getElementById('feedbackLoading').style.display = 'none';
+    document.getElementById('feedbackResult').style.display = 'block';
+    document.getElementById('feedbackStudentName').textContent = currentStudent.name + ' · 180° PSC Academy';
+    document.getElementById('feedbackDate').textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const sections = [
+      { label: 'Eye Shape Assessment', key: 'eyeShape' },
+      { label: 'Design Decision Review', key: 'designDecisions' },
+      { label: 'Technique Execution', key: 'techniqueExecution' },
+      { label: 'What Is Working', key: 'whatIsWorking' },
+      { label: 'What To Adjust', key: 'whatToAdjust' },
+      { label: 'Priority Focus For Your Next Set', key: 'priorityFocus' }
+    ];
+
+    const container = document.getElementById('feedbackSections');
+    container.innerHTML = '';
+    sections.forEach(function(s) {
+      if (!feedback[s.key]) return;
+      const div = document.createElement('div');
+      div.className = 'feedback-section';
+      div.innerHTML = `<div class="feedback-section-label">${s.label}</div><div class="feedback-section-text">${feedback[s.key]}</div>`;
+      container.appendChild(div);
+    });
+
+
+    // Save to Supabase
+    saveSubmission('review-set', { intent: intent, student: currentStudent ? currentStudent.name : 'Demo' }, feedback);
+  } catch (err) {
+    document.getElementById('feedbackLoading').style.display = 'none';
+    document.getElementById('feedbackResult').style.display = 'block';
+    document.getElementById('feedbackSections').innerHTML = '<div class="feedback-section"><div class="feedback-section-text">Something went wrong. Please try again.</div></div>';
+    console.error(err);
+  }
+});
+
+
+// ── CHAT WITH RACHEL ──
+let chatHistory = [];
+let chatAttachment = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+
+document.getElementById('chatCard').addEventListener('click', function() {
+  document.getElementById('chatPanel').classList.add('open');
+  const name = currentStudent ? currentStudent.name : 'there';
+  document.getElementById('chatWelcome').textContent = 
+    'Hi ' + name + '. What do you need help with today — is it a design question, something technique-related, or are you stuck on a business decision?';
+  chatHistory = [];
+  chatAttachment = null;
+  document.getElementById('chatAttachPreview').classList.remove('show');
+  document.getElementById('chatInput').focus();
+});
+
+// Attachment button
+document.getElementById('chatAttachBtn').addEventListener('click', function() {
+  document.getElementById('chatFileInput').click();
+});
+
+// File selected
+document.getElementById('chatFileInput').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const base64 = e.target.result.split(',')[1];
+    const mediaType = file.type;
+    const name = file.name;
+
+    chatAttachment = { base64, mediaType, name };
+
+    // Show preview
+    const preview = document.getElementById('chatAttachPreview');
+    const thumb = document.getElementById('chatAttachThumb');
+    const nameEl = document.getElementById('chatAttachName');
+
+    if (mediaType.startsWith('image/')) {
+      thumb.src = e.target.result;
+      thumb.style.display = 'block';
+    } else {
+      thumb.style.display = 'none';
+    }
+    nameEl.textContent = name;
+    preview.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+  this.value = ''; // reset so same file can be reselected
+});
+
+// Remove attachment
+document.getElementById('chatAttachRemove').addEventListener('click', function() {
+  chatAttachment = null;
+  document.getElementById('chatAttachPreview').classList.remove('show');
+  document.getElementById('chatAttachThumb').src = '';
+});
+
+document.getElementById('chatClose').addEventListener('click', function() {
+  document.getElementById('chatPanel').classList.remove('open');
+});
+
+document.getElementById('chatPanel').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+
+// Auto-resize textarea
+document.getElementById('chatInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Send on Enter (Shift+Enter for new line)
+document.getElementById('chatInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    document.getElementById('chatSend').click();
+  }
+});
+
+document.getElementById('chatSend').addEventListener('click', async function() {
+  const input = document.getElementById('chatInput');
+  const message = input.value.trim();
+  if (!message) return;
+
+  const messagesEl = document.getElementById('chatMessages');
+  const typingEl = document.getElementById('chatTyping');
+  const sendBtn = document.getElementById('chatSend');
+
+  // Add student message to UI
+  const studentName = currentStudent ? currentStudent.name : 'You';
+  const studentMsg = document.createElement('div');
+  studentMsg.className = 'chat-msg student';
+  studentMsg.innerHTML = '<div class="chat-msg-name">' + studentName + '</div><div class="chat-msg-bubble">' + message + '</div>';
+  messagesEl.appendChild(studentMsg);
+
+  // Clear input
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Show typing indicator
+  typingEl.style.display = 'block';
+  sendBtn.disabled = true;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  // Add to chat history
+  chatHistory.push({ role: 'user', content: message });
+
+  try {
+    // Fetch relevant doctrine from Supabase
+    const reviewDoctrine = await fetchDoctrine('review');
+    const eyesDoctrine = await fetchDoctrine('eyes');
+    const mappingDoctrine = await fetchDoctrine('mapping');
+    const toneDoctrine = await fetchDoctrine('tone');
+    const allDoctrine = [reviewDoctrine, eyesDoctrine, mappingDoctrine, toneDoctrine].filter(Boolean).join('\n\n');
+
+    const systemPrompt = `You are Rachel, founder of PSC Academy and the 180° lash design programme. You are responding to a message from ${studentName}, one of your students.
+
+You are direct, warm, specific and knowledgeable. You never give generic advice. Every answer references the PSC method specifically.
+
+${allDoctrine ? 'USE THIS PSC DOCTRINE IN YOUR ANSWERS:\n\n' + allDoctrine : ''}
+
+Keep responses conversational and concise — this is a chat, not an essay. Be direct. If it is a technique question, give the specific PSC answer. If it is a business question, give a clear actionable response. Sound like yourself — Rachel — not like a generic AI assistant.`;
+
+    // Build message content — text + optional attachment
+    const userContent = [];
+    if (chatAttachment) {
+      if (chatAttachment.mediaType.startsWith('image/')) {
+        userContent.push({ type: 'image', source: { type: 'base64', media_type: chatAttachment.mediaType, data: chatAttachment.base64 } });
+      } else if (chatAttachment.mediaType === 'application/pdf') {
+        userContent.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: chatAttachment.base64 } });
+      }
+    }
+    userContent.push({ type: 'text', text: message });
+
+    // Update last history entry with full content
+    chatHistory[chatHistory.length - 1] = { role: 'user', content: userContent };
+
+    // Show attachment in UI if image
+    if (chatAttachment && chatAttachment.mediaType.startsWith('image/')) {
+      const imgEl = document.createElement('img');
+      imgEl.src = 'data:' + chatAttachment.mediaType + ';base64,' + chatAttachment.base64;
+      imgEl.className = 'chat-msg-image';
+      studentMsg.querySelector('.chat-msg-bubble').appendChild(imgEl);
+    }
+
+    // Clear attachment
+    chatAttachment = null;
+    document.getElementById('chatAttachPreview').classList.remove('show');
+    document.getElementById('chatAttachThumb').src = '';
+
+    const response = await fetch('/api/anthropic', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+       
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        system: systemPrompt,
+        messages: chatHistory
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error || data?.details || 'Chat request failed');
+    const reply = data?.content?.[0]?.text || '';
+    if (!reply) throw new Error('No reply returned');
+
+    // Add to history
+    chatHistory.push({ role: 'assistant', content: reply });
+
+    // Add Rachel reply to UI
+    typingEl.style.display = 'none';
+    const rachelMsg = document.createElement('div');
+    rachelMsg.className = 'chat-msg rachel';
+    rachelMsg.innerHTML = '<div class="chat-msg-name">Rachel</div><div class="chat-msg-bubble">' + reply.replace(/\n/g, '<br>') + '</div>';
+    messagesEl.appendChild(rachelMsg);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    // Save to Supabase submissions
+    saveSubmission('chat-rachel', { message: message }, { reply: reply });
+
+  } catch(err) {
+    typingEl.style.display = 'none';
+    const errMsg = document.createElement('div');
+    errMsg.className = 'chat-msg rachel';
+    errMsg.innerHTML = '<div class="chat-msg-name">Rachel</div><div class="chat-msg-bubble">Something went wrong — please try again.</div>';
+    messagesEl.appendChild(errMsg);
+    console.error(err);
+  }
+
+  sendBtn.disabled = false;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+});
+
+}); // end DOMContentLoaded for chat
+
+// ── RESOURCES PANEL ──
+document.getElementById('resourcesCard').addEventListener('click', function() {
+  document.getElementById('resourcesPanel').classList.add('open');
+});
+document.getElementById('resourcesClose').addEventListener('click', function() {
+  document.getElementById('resourcesPanel').classList.remove('open');
+});
+document.getElementById('resourcesPanel').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+// ── AGENT 3 + 4 (Illusion Architect + Empire Architect) ──
+document.getElementById('illusionCard').addEventListener('click', function() {
+  document.getElementById('illusionPanel').classList.add('open');
+});
+document.getElementById('illusionClose').addEventListener('click', function() {
+  document.getElementById('illusionPanel').classList.remove('open');
+  resetIllusion();
+});
+document.getElementById('illusionPanel').addEventListener('click', function(e) {
+  if (e.target === this) { this.classList.remove('open'); resetIllusion(); }
+});
+
+document.getElementById('empireCard').addEventListener('click', function() {
+  document.getElementById('empirePanel').classList.add('open');
+});
+document.getElementById('empireClose').addEventListener('click', function() {
+  document.getElementById('empirePanel').classList.remove('open');
+  resetEmpire();
+});
+document.getElementById('empirePanel').addEventListener('click', function(e) {
+  if (e.target === this) { this.classList.remove('open'); resetEmpire(); }
+});
+
+// Upload preview for client photo
+setupUpload('clientInput', 'clientZone', 'clientPreview');
+
+function resetIllusion(){
+  document.getElementById('illusionForm').style.display = '';
+  document.getElementById('illusionOutput').classList.remove('show');
+  document.getElementById('illusionLoading').style.display = 'block';
+  document.getElementById('illusionResult').style.display = 'none';
+  document.getElementById('illusionSections').innerHTML = '';
+  document.getElementById('clientInput').value = '';
+  document.getElementById('clientZone').classList.remove('has-file');
+  document.getElementById('illusionNotes').value = '';
+}
+
+function resetEmpire(){
+  document.getElementById('empireForm').style.display = '';
+  document.getElementById('empireOutput').classList.remove('show');
+  document.getElementById('empireLoading').style.display = 'block';
+  document.getElementById('empireResult').style.display = 'none';
+  document.getElementById('empireSections').innerHTML = '';
+  document.getElementById('empireNow').value = '';
+  document.getElementById('empireOffers').value = '';
+  document.getElementById('empireGoals').value = '';
+  document.getElementById('empireLinks').value = '';
+}
+
+async function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+async function anthropicCall({system, messages, max_tokens=1600}) {
+  const response = await fetch('/api/anthropic', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens,
+      system,
+      messages
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    const msg = data?.error || data?.details || 'Anthropic request failed';
+    throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+  }
+  const t = data?.content?.[0]?.text || '';
+  if (!t) throw new Error('No content returned');
+  return { data, text: t };
+}
+
+function mapVisionToIllusionPlan(data, outcome, notes) {
+  const report = data?.report || {};
+  const observations = data?.observations || {};
+  const warnings = Array.isArray(data?.warnings) ? data.warnings : [];
+
+  const warningText = warnings.length
+    ? warnings.join(' ')
+    : 'No major visibility warnings were flagged from the uploaded image.';
+
+  const shapeParts = [];
+  if (observations.imageSuitability) shapeParts.push('Image suitability: ' + observations.imageSuitability + '.');
+  if (Array.isArray(observations.eyeShapeCandidates) && observations.eyeShapeCandidates.length) {
+    shapeParts.push('Shape tendency: ' + observations.eyeShapeCandidates.join(', ') + '.');
+  }
+  if (observations.mobileLidVisibility) shapeParts.push('Mobile lid visibility: ' + observations.mobileLidVisibility + '.');
+  if (observations.hoodingLikelihood) shapeParts.push('Hooding likelihood: ' + observations.hoodingLikelihood + '.');
+  if (observations.outerCornerTilt) shapeParts.push('Outer corner tilt: ' + observations.outerCornerTilt + '.');
+  if (observations.eyeSpacing) shapeParts.push('Eye spacing: ' + observations.eyeSpacing + '.');
+  if (observations.browBoneProjection) shapeParts.push('Brow bone projection: ' + observations.browBoneProjection + '.');
+
+  return {
+    eyeShapeDiagnosis: report.summary || shapeParts.join(' ') || 'Conservative eye analysis generated.',
+    asymmetryFlags: report.asymmetryFlags || warningText,
+    mappingPlan: report.zonePlan || 'A balanced PSC mapping structure was generated from the uploaded image.',
+    layerPlan: report.layerPlan || 'A conservative layer distribution plan was generated.',
+    curlPlan: report.curlPlan || 'Curl guidance should begin conservatively from projection compatibility.',
+    lengthLogic: report.lengthPlan || 'Length should be controlled according to visible lid space and balance.',
+    vectorDirection: report.vectorPlan || 'Vector direction should support lift and visual harmony.',
+    whyItWorks: [
+      report.summary || '',
+      outcome ? ('Desired emotional outcome: ' + outcome + '.') : '',
+      notes ? ('Student notes considered: ' + notes + '.') : ''
+    ].filter(Boolean).join(' '),
+    firstSetChecklist: warnings.length
+      ? 'Before starting, review these cautions: ' + warnings.join(' ')
+      : 'Use the uploaded image as your base reference, keep the design conservative on the first set, and refine after live lash direction confirms the plan.'
+  };
+}
+
+// ── ILLUSION ARCHITECT SUBMIT ──
+document.getElementById('illusionSubmit').addEventListener('click', async function() {
+  const clientFile = document.getElementById('clientInput').files[0];
+  if (!clientFile) {
+    alert('Please upload a client photo.');
+    return;
+  }
+
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(clientFile.type)) {
+    alert('Please upload a JPG, PNG, or WEBP image. HEIC files are not supported for this tool.');
+    return;
+  }
+
+  const outcome = document.getElementById('illusionOutcome').value;
+  const notes = document.getElementById('illusionNotes').value.trim();
+
+  document.getElementById('illusionForm').style.display = 'none';
+  document.getElementById('illusionOutput').classList.add('show');
+  document.getElementById('illusionLoading').style.display = 'block';
+  document.getElementById('illusionResult').style.display = 'none';
+
+  try {
+    const clientDataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(e) { resolve(e.target.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(clientFile);
+    });
+
+    const response = await fetch('/api/vision-analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        images: [clientDataUrl],
+        outcome: outcome,
+        notes: notes,
+        studentName: currentStudent?.name || 'Student'
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.error || data?.warnings?.[0] || 'Vision analysis failed');
+    }
+
+    const plan = mapVisionToIllusionPlan(data, outcome, notes);
+
+    document.getElementById('illusionLoading').style.display = 'none';
+    document.getElementById('illusionResult').style.display = 'block';
+    document.getElementById('illusionHeaderName').textContent = (currentStudent?.name || 'Student') + ' · PSC Academy';
+    document.getElementById('illusionDate').textContent = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const sections = [
+      { label: 'Eye Shape Diagnosis', key: 'eyeShapeDiagnosis' },
+      { label: 'Asymmetry Flags', key: 'asymmetryFlags' },
+      { label: 'Zone A–D Mapping Plan', key: 'mappingPlan' },
+      { label: 'Layer 1–3 Distribution', key: 'layerPlan' },
+      { label: 'Curl Transitions', key: 'curlPlan' },
+      { label: 'Length Gradient Logic', key: 'lengthLogic' },
+      { label: 'Vector Direction Plan', key: 'vectorDirection' },
+      { label: 'Why This Works', key: 'whyItWorks' },
+      { label: 'First Set Checklist', key: 'firstSetChecklist' }
+    ];
+
+    const container = document.getElementById('illusionSections');
+    container.innerHTML = '';
+    sections.forEach(function(s) {
+      if (!plan[s.key]) return;
+      const div = document.createElement('div');
+      div.className = 'feedback-section';
+      div.innerHTML = `<div class="feedback-section-label">${s.label}</div><div class="feedback-section-text">${plan[s.key]}</div>`;
+      container.appendChild(div);
+    });
+
+    saveSubmission('illusion-architect', {
+      outcome: outcome,
+      notes: notes,
+      student: currentStudent ? currentStudent.name : 'Demo'
+    }, plan);
+
+  } catch (err) {
+    document.getElementById('illusionLoading').style.display = 'none';
+    document.getElementById('illusionResult').style.display = 'block';
+    document.getElementById('illusionSections').innerHTML =
+      '<div class="feedback-section"><div class="feedback-section-text">Something went wrong. Please try again.</div></div>';
+    console.error(err);
+  }
+});
+
+// ── EMPIRE ARCHITECT SUBMIT ──
+document.getElementById('empireSubmit').addEventListener('click', async function() {
+  const now = document.getElementById('empireNow').value.trim();
+  const offers = document.getElementById('empireOffers').value.trim();
+  const goals = document.getElementById('empireGoals').value.trim();
+  const links = document.getElementById('empireLinks').value.trim();
+
+  if (!now || !offers || !goals) {
+    alert('Please fill in Steps 01–03 so the audit is accurate.');
+    return;
+  }
+
+  document.getElementById('empireForm').style.display = 'none';
+  document.getElementById('empireOutput').classList.add('show');
+  document.getElementById('empireLoading').style.display = 'block';
+  document.getElementById('empireResult').style.display = 'none';
+
+  try {
+    const messages = [{
+      role: 'user',
+      content: [
+        { type: 'text', text: `Student: ${currentStudent?.name || 'Student'}.\n\nNOW:\n${now}\n\nOFFERS+PRICING:\n${offers}\n\nGOALS:\n${goals}\n\nLINKS:\n${links || 'None provided.'}` }
+      ]
+    }];
+
+    const system = `You are the 180° Empire Architect™ — a PSC‑lens business audit + scaling strategist for lash designers.
+You do NOT give generic advice. You diagnose bottlenecks and prescribe priorities.
+
+Audit through these lenses:
+- POSITIONING: signature work, niche clarity, authority signals, why people pay more
+- PRICING/OFFERS: service menu structure, premium ladder, transformation framing
+- CONTENT: what to post (not “post more”), hooks, formats, authority loops
+- SYSTEMS: booking, CRM, follow ups, retention drivers, lead handling
+- SCALE: productization, education, digital assets, leverage
+
+Output MUST be JSON exactly:
+{
+  "coreDiagnosis": "...",
+  "bottlenecks": "...",
+  "positioningFix": "...",
+  "offerPricingPlan": "...",
+  "contentStrategy": "...",
+  "systemsUpgrades": "...",
+  "sixMonthRoadmap": "...",
+  "first7Days": "..."
+}
+
+Tone: decisive, high standards, specific actions. Use short punchy sentences where appropriate.`;
+
+    const { text: respText } = await anthropicCall({ system, messages, max_tokens: 1900 });
+
+    let audit;
+    try {
+      const clean = respText.replace(/```json|```/g, '').trim();
+      audit = JSON.parse(clean);
+    } catch {
+      audit = { coreDiagnosis: respText };
+    }
+
+    document.getElementById('empireLoading').style.display = 'none';
+    document.getElementById('empireResult').style.display = 'block';
+    document.getElementById('empireHeaderName').textContent = (currentStudent?.name || 'Student') + ' · PSC Academy';
+    document.getElementById('empireDate').textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const sections = [
+      { label: 'Core Diagnosis', key: 'coreDiagnosis' },
+      { label: 'Bottlenecks', key: 'bottlenecks' },
+      { label: 'Positioning Fix', key: 'positioningFix' },
+      { label: 'Offer + Pricing Plan', key: 'offerPricingPlan' },
+      { label: 'Content Strategy', key: 'contentStrategy' },
+      { label: 'Systems Upgrades', key: 'systemsUpgrades' },
+      { label: '6‑Month Roadmap', key: 'sixMonthRoadmap' },
+      { label: 'First 7 Days', key: 'first7Days' }
+    ];
+
+    const container = document.getElementById('empireSections');
+    container.innerHTML = '';
+    sections.forEach(function(s) {
+      if (!audit[s.key]) return;
+      const div = document.createElement('div');
+      div.className = 'feedback-section';
+      div.innerHTML = `<div class="feedback-section-label">${s.label}</div><div class="feedback-section-text">${audit[s.key]}</div>`;
+      container.appendChild(div);
+    });
+
+  } catch (err) {
+    document.getElementById('empireLoading').style.display = 'none';
+    document.getElementById('empireResult').style.display = 'block';
+    document.getElementById('empireSections').innerHTML = '<div class="feedback-section"><div class="feedback-section-text">Something went wrong. Please try again.</div></div>';
+    console.error(err);
+  }
+});
+
+</script>
+
+<!-- Vapi: load + init (we control start/stop) -->
+<script>
+  window.vapiInstance = null;
+
+  function initVapi() {
+    if (!window.vapiSDK || typeof window.vapiSDK.run !== "function") return;
+    window.vapiInstance = window.vapiSDK.run({
+      apiKey: "14601cea-b2da-4f27-8384-62452e81cb17",
+      assistant: "8199e7db-0c37-47fc-8793-79a28157be6f"
+    });
+  }
+
+  window.__onVapiLoaded = function () { initVapi(); };
+  window.addEventListener("load", () => { initVapi(); });
+</script>
+<script
+  src="https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js"
+  defer
+  onload="window.__onVapiLoaded()">
+</script>
+
+
+<script>
+  // ---- VAPI CUSTOM BUTTON BRIDGE (RELIABLE) ----
+
+  // --- OVERLAY / GLOW (mono + purple) ---
+  let __micStream = null;
+  let __audioCtx = null;
+  let __analyser = null;
+  let __raf = null;
+
+  function setOverlay(on){
+    document.body.classList.toggle('call-active', !!on);
+    if (!on) document.body.classList.remove('call-min');
+
+    const status = document.getElementById('capStatus');
+    const chip = document.getElementById('callChip');
+    const pill = document.getElementById('capPill');
+
+    if (status) status.textContent = on ? 'Connected — listening' : 'Ready';
+    if (chip) chip.textContent = on ? 'LIVE' : 'READY';
+    if (pill) pill.textContent = on ? 'Live' : 'Idle';
+
+    if (!on){
+      const you = document.getElementById('capYou'); if (you) you.textContent = '';
+      const agent = document.getElementById('capAgent'); if (agent) agent.textContent = '';
+      document.documentElement.style.setProperty('--voice', 0);
+    }
+  }
+
+  function startGlowFromStream(stream){
+    try{
+      __micStream = stream;
+      __audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = __audioCtx.createMediaStreamSource(stream);
+      __analyser = __audioCtx.createAnalyser();
+      __analyser.fftSize = 512;
+      source.connect(__analyser);
+
+      const data = new Uint8Array(__analyser.frequencyBinCount);
+      const tick = () => {
+        __analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i=0;i<data.length;i++){
+          const v = (data[i]-128)/128;
+          sum += v*v;
+        }
+        const rms = Math.min(1, Math.sqrt(sum/data.length) * 2.2);
+        document.documentElement.style.setProperty('--voice', rms.toFixed(3));
+        __raf = requestAnimationFrame(tick);
+      };
+      tick();
+    }catch(e){ console.warn('Glow visualiser unavailable:', e); }
+  }
+
+  function stopGlow(){
+    try{
+      if (__raf) cancelAnimationFrame(__raf);
+      __raf = null;
+      if (__audioCtx) __audioCtx.close();
+      __audioCtx = null;
+      __analyser = null;
+      if (__micStream){
+        __micStream.getTracks().forEach(t => t.stop());
+      }
+      __micStream = null;
+      document.documentElement.style.setProperty('--voice', 0);
+    }catch(e){}
+  }
+  // This removes any prior click handlers and routes calls through Vapi’s injected widget button.
+  function replaceNode(el) {
+    const fresh = el.cloneNode(true);
+    el.parentNode.replaceChild(fresh, el);
+    return fresh;
+  }
+
+  function waitForVapiButton(timeoutMs = 15000) {
+    const start = Date.now();
+    return new Promise((resolve, reject) => {
+      (function tick() {
+        const btn = document.querySelector('.vapi-btn');
+        if (btn) return resolve(btn);
+        if (Date.now() - start > timeoutMs) return reject(new Error('Vapi widget did not load (.vapi-btn not found)'));
+        setTimeout(tick, 150);
+      })();
+    });
+  }
+
+  async function ensureMicPermission() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      return stream;
+    } catch (e) {
+      console.error('Mic permission error:', e);
+      alert('Microphone permission is required. In Safari: Safari → Settings → Websites → Microphone → Allow for this site, then refresh.');
+      return null;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const callBtnOld = document.getElementById('callBtn');
+    const endBtnOld  = document.getElementById('endCallBtn');
+    const callStatus = document.getElementById('callStatus');
+    const minBtn = document.getElementById('callOverlayMin');
+    const overlayEnd = document.getElementById('overlayEndCall');
+
+    if (!callBtnOld || !endBtnOld || !callStatus) return;
+
+    if (minBtn){
+      minBtn.addEventListener('click', () => document.body.classList.toggle('call-min'));
+    }
+
+    const callBtn = replaceNode(callBtnOld);
+    const endBtn  = replaceNode(endBtnOld);
+
+    if (overlayEnd){
+      overlayEnd.addEventListener('click', () => endBtn.click());
+    }
+
+    callBtn.addEventListener('click', async () => {
+      const stream = await ensureMicPermission();
+      if (!stream) return;
+
+      setOverlay(true);
+      startGlowFromStream(stream);
+
+      try {
+        const vapiBtn = await waitForVapiButton();
+
+        // Personalise the call with student name before starting
+        if (window.vapiInstance && currentStudent && currentStudent.name !== 'Student') {
+          try {
+            window.vapiInstance.start({
+              assistantId: '8199e7db-0c37-47fc-8793-79a28157be6f',
+              assistantOverrides: {
+                firstMessage: 'Hi ' + currentStudent.name + ', welcome back to 180° support. What are you working on today — is it a design question, something business related, or are you stuck on part of the programme?',
+                variableValues: { studentName: currentStudent.name }
+              }
+            });
+          } catch(e) {
+            vapiBtn.click(); // fallback to widget click
+          }
+        } else {
+          vapiBtn.click(); // starts the call via widget
+        }
+
+        callBtn.style.display = 'none';
+        callStatus.classList.add('active');
+      } catch (e) {
+        console.error(e);
+        alert('Voice widget did not load. Hard refresh (Cmd+Shift+R) and try again.');
+      }
+    });
+
+    endBtn.addEventListener('click', async () => {
+      const vapiBtn = document.querySelector('.vapi-btn');
+      if (vapiBtn) vapiBtn.click(); // toggles end
+      callBtn.style.display = 'flex';
+      callStatus.classList.remove('active');
+
+      setOverlay(false);
+      stopGlow();
+    });
+  });
+</script>
+
+<!-- Vapi Widget (hidden; triggered by our custom UI) -->
+<script>
+  window.vapiConfig = {
+    apiKey: '14601cea-b2da-4f27-8384-62452e81cb17',
+    assistant: '8199e7db-0c37-47fc-8793-79a28157be6f',
+    config: {
+      position: 'bottom-right',
+      offset: '40px',
+      width: '50px',
+      height: '50px',
+      idle: { color: '#0a0a0a', type: 'pill', title: 'Call Rachel', subtitle: '180° Support', icon: 'https://unpkg.com/lucide-static@0.321.0/icons/phone.svg' },
+      loading: { color: '#111', type: 'pill', title: 'Connecting…', subtitle: 'Allow microphone', icon: 'https://unpkg.com/lucide-static@0.321.0/icons/loader-2.svg' },
+      active: { color: '#4caf50', type: 'pill', title: 'Connected', subtitle: 'Speak now', icon: 'https://unpkg.com/lucide-static@0.321.0/icons/phone-call.svg' }
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js"></script>
+
+
+
+<!-- CHAT WITH RACHEL PANEL -->
+<div id="chatPanel">
+  <div class="chat-box">
+    <div class="chat-header">
+      <div>
+        <div class="chat-header-title">Message Rachel</div>
+        <div class="chat-header-sub">PSC Support · Powered by your knowledge base</div>
+      </div>
+      <button class="chat-close" id="chatClose">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg rachel">
+        <div class="chat-msg-name">Rachel</div>
+        <div class="chat-msg-bubble" id="chatWelcome"></div>
+      </div>
+    </div>
+    <div class="chat-typing" id="chatTyping">Rachel is thinking...</div>
+    <div class="chat-attachment-preview" id="chatAttachPreview">
+      <img class="chat-attachment-thumb" id="chatAttachThumb" src="" alt="">
+      <span class="chat-attachment-name" id="chatAttachName"></span>
+      <button class="chat-attachment-remove" id="chatAttachRemove">✕</button>
+    </div>
+    <div class="chat-input-row">
+      <button class="chat-attach" id="chatAttachBtn" title="Attach image or document">📎</button>
+      <input type="file" id="chatFileInput" accept="image/*,.pdf" style="display:none;">
+      <textarea class="chat-input" id="chatInput" placeholder="Ask Rachel anything — technique, design, business..." rows="1"></textarea>
+      <button class="chat-send" id="chatSend">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- LUX NOISE FILTER (subtle grain) -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="pscNoise">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch" />
+    <feColorMatrix type="matrix" values="
+      1 0 0 0 0
+      0 1 0 0 0
+      0 0 1 0 0
+      0 0 0 0.22 0" />
+  </filter>
+</svg>
+
+
+<!-- CALL GLOW OVERLAY + CAPTIONS -->
+<div id="callOverlay" aria-hidden="true">
+  <div class="call-ov-bg180" aria-hidden="true">180<span class="deg">°</span></div>
+
+  <button class="call-ov-min" id="callOverlayMin" title="Minimise">—</button>
+
+  <div class="call-overlay-inner">
+    <div class="call-orb-wrap">
+      <div class="call-orb" id="callOrb"></div>
+      <div class="call-orb-ring"></div>
+      <div class="call-orb-chip" id="callChip">READY</div>
+    </div>
+
+    <div class="call-captions" id="callCaptions" aria-live="polite">
+      <div class="cap-top">
+        <div class="cap-status" id="capStatus">Ready</div>
+        <div class="cap-pill" id="capPill">Idle</div>
+      </div>
+
+      <div class="cap-line cap-you" id="capYou"></div>
+      <div class="cap-line cap-agent" id="capAgent"></div>
+
+      <div class="cap-actions">
+        <button class="cap-end" id="overlayEndCall">End Call</button>
+      </div>
+
+      <div class="cap-hint" id="capHint">Captions are best‑effort. If your mic permission changes, refresh.</div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+  var COURSE_DATA = [
+    { id:1, number:'01', title:'Designer Consultation System', lessons:[
+      { id:1,  title:'The Designer Mindset',                  duration:'8 min',  vimeo_id:null, notes:'Why you are a designer, not a service provider. How this single shift changes everything — your pricing, your confidence, your client relationships.' },
+      { id:2,  title:'The 5-Step PSC Consultation Framework', duration:'12 min', vimeo_id:null, notes:'The exact consultation process Rachel uses. From the first question to the final design decision — nothing is left to instinct.' },
+      { id:3,  title:'The Aura System',                       duration:'10 min', vimeo_id:null, notes:'How to read a client\'s energy, lifestyle, and visual identity before you design. The aura system prevents mismatched sets.' }
+    ]},
+    { id:2, number:'02', title:'Architectural Foundations', lessons:[
+      { id:4,  title:'Zone Theory & Segmentation',            duration:'14 min', vimeo_id:null, notes:'The four zones (A-D) and how to design within each one intentionally. Zone theory is the backbone of every PSC set.' },
+      { id:5,  title:'Foundation Shapes',                     duration:'11 min', vimeo_id:null, notes:'The six foundation shapes and when to use each. How the foundation shape determines everything that comes after it.' },
+      { id:6,  title:'The Layer System',                      duration:'16 min', vimeo_id:null, notes:'L1, L2, and L3 — what each layer does, how they interact, and how to plan them before you apply a single lash.' }
+    ]},
+    { id:3, number:'03', title:'Curl Engineering', lessons:[
+      { id:7,  title:'Understanding Curl Profiles',           duration:'13 min', vimeo_id:null, notes:'Every curl from J to L+ — the physics behind each one and why it behaves the way it does on different eye shapes.' },
+      { id:8,  title:'The Curl Decision Framework',           duration:'9 min',  vimeo_id:null, notes:'How to choose the right curl for every zone, every client, every intention. The decision tree that removes guesswork.' },
+      { id:9,  title:'Corrective Curl Strategies',            duration:'15 min', vimeo_id:null, notes:'When the client\'s natural lash direction fights your design. How to correct without compromising the look.' }
+    ]},
+    { id:4, number:'04', title:'Multi-Layer Mapping', lessons:[
+      { id:10, title:'Spike Architecture',                    duration:'11 min', vimeo_id:null, notes:'How to place spikes with intention. The rules of spike positioning that create a designed, editorial look.' },
+      { id:11, title:'Texture Engineering',                   duration:'14 min', vimeo_id:null, notes:'Mixing textures within a set so it reads as deliberate, not accidental.' },
+      { id:12, title:'Shadowing & Density',                   duration:'12 min', vimeo_id:null, notes:'Using shadow to create depth and dimension. How density choices in specific zones change the entire perceived shape.' }
+    ]},
+    { id:5, number:'05', title:'Positioning & Pricing', lessons:[
+      { id:13, title:'Premium Positioning Framework',         duration:'18 min', vimeo_id:null, notes:'How to position yourself as a designer, not a technician. The language and client experience that justifies premium pricing.' },
+      { id:14, title:'Pricing Architecture',                  duration:'14 min', vimeo_id:null, notes:'Building a price structure that reflects your skill level and attracts the right clients.' },
+      { id:15, title:'The Value Conversation',                duration:'10 min', vimeo_id:null, notes:'How to talk about your pricing with complete confidence. Scripts for handling price objections without discounting.' }
+    ]},
+    { id:6, number:'06', title:'Business, Content & Scaling', lessons:[
+      { id:16, title:'Content That Converts',                 duration:'16 min', vimeo_id:null, notes:'What to post, how to post it, and why most lash artists content does not attract premium clients.' },
+      { id:17, title:'Systems & Client Management',           duration:'12 min', vimeo_id:null, notes:'CRM setup, booking systems, aftercare automation. How to run a premium business without it running you.' },
+      { id:18, title:'Scaling Beyond the Chair',              duration:'20 min', vimeo_id:null, notes:'Revenue beyond appointments. Education, digital products, mentoring. Building a business that does not depend on your hands alone.' }
+    ]}
+  ];
+
+  var completedLessons = {};
+  var activeLesson = null;
+  var activeModuleId = 1;
+
+  function getAllLessons() {
+    var all = [];
+    COURSE_DATA.forEach(function(m){ m.lessons.forEach(function(l){ all.push({lesson:l,module:m}); }); });
+    return all;
+  }
+
+  function isModuleUnlocked(idx) {
+    if (idx === 0) return true;
+    return COURSE_DATA[idx-1].lessons.every(function(l){ return completedLessons[l.id]; });
+  }
+
+  function updateProgress() {
+    var total = getAllLessons().length;
+    var done = Object.keys(completedLessons).length;
+    var pct = total > 0 ? Math.round((done/total)*100) : 0;
+    document.getElementById('overallFill').style.width = pct + '%';
+    document.getElementById('overallPct').textContent = pct + '%';
+  }
+
+  function renderSidebar() {
+    var sidebar = document.getElementById('moduleSidebar');
+    sidebar.innerHTML = '';
+    COURSE_DATA.forEach(function(module, idx) {
+      var unlocked = isModuleUnlocked(idx);
+      var done = module.lessons.filter(function(l){ return completedLessons[l.id]; }).length;
+      var isOpen = activeModuleId === module.id;
+
+      var div = document.createElement('div');
+      div.className = 'course-module';
+
+      var lessonsHtml = module.lessons.map(function(l) {
+        return '<div class="course-lesson' + (activeLesson && activeLesson.id === l.id ? ' active' : '') + '" data-lid="' + l.id + '">' +
+          '<div class="course-lesson-tick' + (completedLessons[l.id] ? ' done' : '') + '">&#10003;</div>' +
+          '<div><div class="course-lesson-title">' + l.title + '</div>' +
+          '<div class="course-lesson-dur">' + l.duration + '</div></div></div>';
+      }).join('');
+
+      div.innerHTML =
+        '<div class="course-module-header' + (!unlocked ? ' locked' : '') + '" data-mid="' + module.id + '">' +
+          '<div class="course-module-left">' +
+            '<div class="course-module-num">' + module.number + '</div>' +
+            '<div><div class="course-module-title">' + module.title + '</div>' +
+            '<div class="course-module-meta">' + done + '/' + module.lessons.length + ' complete' + (!unlocked ? ' · Locked' : '') + '</div></div>' +
+          '</div>' +
+          '<div class="course-module-chevron' + (isOpen ? ' open' : '') + '">' + (unlocked ? '&#9662;' : '&#128274;') + '</div>' +
+        '</div>' +
+        '<div style="display:' + (isOpen && unlocked ? 'block' : 'none') + '">' + lessonsHtml + '</div>';
+
+      div.querySelector('.course-module-header').addEventListener('click', function() {
+        if (!unlocked) return;
+        activeModuleId = isOpen ? null : module.id;
+        renderSidebar();
+      });
+      div.querySelectorAll('.course-lesson').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var lid = parseInt(this.dataset.lid);
+          getAllLessons().forEach(function(x){ if (x.lesson.id === lid) loadLesson(x.lesson, x.module); });
+        });
+      });
+      sidebar.appendChild(div);
+    });
+  }
+
+  function loadLesson(lesson, module) {
+    activeLesson = lesson;
+    activeModuleId = module.id;
+
+    var frame = document.getElementById('videoFrame');
+    var placeholder = document.getElementById('videoPlaceholder');
+    if (lesson.vimeo_id) {
+      frame.src = 'https://player.vimeo.com/video/' + lesson.vimeo_id + '?color=ffffff&title=0&byline=0&portrait=0';
+      frame.style.display = 'block';
+      placeholder.style.display = 'none';
+    } else {
+      frame.src = ''; frame.style.display = 'none'; placeholder.style.display = 'flex';
+      placeholder.innerHTML = '<div class="course-video-placeholder-icon">&#9654;</div><div class="course-video-placeholder-text">Video coming soon</div>';
+    }
+
+    document.getElementById('lessonInfo').style.display = 'flex';
+    document.getElementById('lessonModuleTag').textContent = 'Module ' + module.number + ' · ' + module.title;
+    document.getElementById('lessonName').textContent = lesson.title;
+    document.getElementById('lessonDuration').textContent = lesson.duration;
+
+    var btn = document.getElementById('completeBtn');
+    btn.textContent = completedLessons[lesson.id] ? 'Completed' : 'Mark as Complete';
+    btn.className = 'course-complete-btn' + (completedLessons[lesson.id] ? ' done' : '');
+
+    document.getElementById('lessonNotes').style.display = lesson.notes ? 'block' : 'none';
+    if (lesson.notes) document.getElementById('notesBody').textContent = lesson.notes;
+
+    var all = getAllLessons();
+    var idx = all.findIndex(function(x){ return x.lesson.id === lesson.id; });
+    var next = all[idx+1];
+    document.getElementById('nextLesson').style.display = next ? 'flex' : 'none';
+    if (next) {
+      document.getElementById('nextLessonTitle').textContent = next.lesson.title;
+      document.getElementById('nextLesson').onclick = function(){ loadLesson(next.lesson, next.module); };
+    }
+
+    document.getElementById('courseMain').scrollTop = 0;
+    renderSidebar();
+  }
+
+  document.getElementById('completeBtn').addEventListener('click', function() {
+    if (!activeLesson || completedLessons[activeLesson.id]) return;
+    completedLessons[activeLesson.id] = true;
+    this.textContent = 'Completed';
+    this.className = 'course-complete-btn done';
+    updateProgress();
+    renderSidebar();
+    var al = activeLesson;
+    setTimeout(function() {
+      var all = getAllLessons();
+      var idx = all.findIndex(function(x){ return x.lesson.id === al.id; });
+      var next = all[idx+1];
+      if (next) loadLesson(next.lesson, next.module);
+    }, 800);
+  });
+
+  // Tab switching
+  document.getElementById('tabDashboard').addEventListener('click', function() {
+    document.getElementById('dashboardView').classList.remove('hidden');
+    document.getElementById('courseView').classList.remove('active');
+    document.getElementById('tabDashboard').classList.add('active');
+    document.getElementById('tabCourse').classList.remove('active');
+  });
+
+  document.getElementById('tabCourse').addEventListener('click', function() {
+    document.getElementById('dashboardView').classList.add('hidden');
+    document.getElementById('courseView').classList.add('active');
+    document.getElementById('tabCourse').classList.add('active');
+    document.getElementById('tabDashboard').classList.remove('active');
+    renderSidebar();
+    updateProgress();
+  });
+
+});
+</script>
+
+</body>
 </html>
