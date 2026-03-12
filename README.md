@@ -1,13 +1,14 @@
 # 180° Student Portal
 
-Clean student portal with:
+Single-page student portal for PSC Academy, including:
 - enrolment code login
-- module / lesson progress
-- local progress persistence
+- dashboard + course/modules view
+- review/chat/resource panels
+- Vercel static deployment config
 
 ## Local run
 
-Open `index.html` directly in browser, or serve the folder with any static server.
+Open `index.html` directly in browser, or serve the project with any static server.
 
 ## Vercel deployment
 
