@@ -1,19 +1,28 @@
-# 180° Student Portal
+# 180° Programme Gateway
 
-Single-page student portal for PSC Academy, including:
-- enrolment code login
-- dashboard + course/modules view
-- review/chat/resource panels
-- Vercel static deployment config
+Minimal, premium animated entry screen built with Next.js App Router.
 
-## Local run
+## Routes
 
-Open `index.html` directly in browser, or serve the project with any static server.
+- `/` — animated gateway screen with click/auto transition
+- `/login` — private access login screen
 
-## Vercel deployment
+## Local development
 
-This repo includes:
-- `vercel.json` (explicit build + output settings)
-- `package.json` with `npm run build` script
+```bash
+npm install
+npm run dev
+```
 
-No additional framework setup is required.
+Then open `http://localhost:3000`.
+
+## Production
+
+```bash
+npm run build
+npm run start
+```
+
+## Deploy to Vercel
+
+No custom config is required. Vercel will auto-detect Next.js from `package.json`.
