@@ -6,43 +6,52 @@ type DotFieldBackgroundProps = {
   dispersing: boolean;
 };
 
-type DotPoint = {
-  x: number;
-  y: number;
+type RingDef = {
+  radius: number;
+  dotCount: number;
+  size: number;
+  opacity: number;
   phase: number;
-  jitter: number;
+  twistAmplitude: number;
+  pulseAmplitude: number;
 };
-
-const MIN_SPACING = 16;
-const MAX_SPACING = 24;
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-function createDotField(width: number, height: number): DotPoint[] {
-  const points: DotPoint[] = [];
-  const area = width * height;
-  const spacing = clamp(Math.sqrt(area / 2400), MIN_SPACING, MAX_SPACING);
-  const cols = Math.ceil(width / spacing) + 1;
-  const rows = Math.ceil(height / spacing) + 1;
+function buildRingGrid(width: number, height: number) {
+  const shortest = Math.min(width, height);
+  const outerRadius = shortest * 0.345;
+  const innerRadius = outerRadius * 0.43;
+  const thickness = outerRadius - innerRadius;
+  const ringCount = Math.max(12, Math.floor(thickness / 10));
+  const rings: RingDef[] = [];
 
-  for (let row = 0; row < rows; row += 1) {
-    for (let col = 0; col < cols; col += 1) {
-      const index = row * cols + col;
-      const noise = Math.sin(index * 12.9898) * 43758.5453;
-      const random = noise - Math.floor(noise);
+  for (let i = 0; i < ringCount; i += 1) {
+    const t = ringCount <= 1 ? 0 : i / (ringCount - 1);
+    const radius = innerRadius + thickness * t;
+    const circumference = 2 * Math.PI * radius;
+    const spacing = 16;
+    const dotCount = Math.max(18, Math.round(circumference / spacing));
 
-      points.push({
-        x: col * spacing,
-        y: row * spacing,
-        phase: random * Math.PI * 2,
-        jitter: random,
-      });
-    }
+    // Larger, bolder dots weighted toward middle/outer bands.
+    const profile = Math.exp(-((t - 0.62) ** 2) / (2 * 0.24 ** 2));
+    const size = 2.7 + profile * 4.6;
+    const opacity = clamp(0.72 + profile * 0.22, 0.72, 0.95);
+
+    rings.push({
+      radius,
+      dotCount,
+      size,
+      opacity,
+      phase: i * 0.42,
+      twistAmplitude: 0.012 + profile * 0.01,
+      pulseAmplitude: 0.008 + profile * 0.012,
+    });
   }
 
-  return points;
+  return { rings, outerRadius };
 }
 
 export default function DotFieldBackground({ dispersing }: DotFieldBackgroundProps) {
@@ -55,12 +64,14 @@ export default function DotFieldBackground({ dispersing }: DotFieldBackgroundPro
     const context = canvas.getContext("2d", { alpha: false });
     if (!context) return;
 
-    let points: DotPoint[] = [];
+    let rings: RingDef[] = [];
     let width = 0;
     let height = 0;
     let dpr = 1;
     let animationFrameId = 0;
-    let start = performance.now();
+    const start = performance.now();
+    let outerRadius = 0;
+    let leaveProgress = 0;
 
     const setup = () => {
       const bounds = canvas.getBoundingClientRect();
@@ -72,47 +83,74 @@ export default function DotFieldBackground({ dispersing }: DotFieldBackgroundPro
       canvas.height = Math.max(1, Math.floor(height * dpr));
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      points = createDotField(width, height);
+      const grid = buildRingGrid(width, height);
+      rings = grid.rings;
+      outerRadius = grid.outerRadius;
     };
 
     const draw = (now: number) => {
       const t = (now - start) * 0.001;
-      const motionBoost = dispersing ? 1.55 : 1;
-      const spreadBoost = dispersing ? 1.45 : 1;
+      leaveProgress = dispersing ? clamp(leaveProgress + 0.014, 0, 1) : clamp(leaveProgress - 0.02, 0, 1);
 
       context.fillStyle = "#ffffff";
       context.fillRect(0, 0, width, height);
 
       const cx = width * 0.5;
       const cy = height * 0.5;
-      const maxRadius = Math.hypot(cx, cy);
+      const globalBreath = 1 + Math.sin(t * 0.55) * 0.018;
+      const leaveExpand = 1 + leaveProgress * 0.22;
+      const leaveFade = 1 - leaveProgress * 0.76;
 
-      for (let i = 0; i < points.length; i += 1) {
-        const point = points[i];
-        const waveA = Math.sin(point.x * 0.0054 + t * 0.25 + point.phase);
-        const waveB = Math.cos(point.y * 0.0051 - t * 0.19 + point.phase);
-        const waveC = Math.sin((point.x + point.y) * 0.0038 + t * 0.14 + point.phase * 0.7);
+      for (let ri = 0; ri < rings.length; ri += 1) {
+        const ring = rings[ri];
+        const ringRadius =
+          ring.radius * globalBreath * leaveExpand * (1 + Math.sin(t * 0.43 + ring.phase) * ring.pulseAmplitude);
+        const ringTwist = Math.sin(t * 0.36 + ring.phase) * ring.twistAmplitude;
 
-        const spread = 1 + (dispersing ? Math.sin(t * 0.9 + point.phase) * 0.55 : 0);
-        const offsetX = (waveA * 1.7 + waveB * 1.35 + waveC * 0.8) * motionBoost * spread * spreadBoost;
-        const offsetY = (waveB * 1.65 - waveA * 0.9 + waveC * 1.1) * motionBoost * spread * spreadBoost;
+        for (let di = 0; di < ring.dotCount; di += 1) {
+          const p = di / ring.dotCount;
+          const theta = p * Math.PI * 2 + ringTwist;
+          const x = cx + Math.cos(theta) * ringRadius;
+          const y = cy + Math.sin(theta) * ringRadius;
 
-        const px = point.x + offsetX;
-        const py = point.y + offsetY;
+          const micro = 1 + Math.sin(t * 0.72 + p * Math.PI * 2 + ring.phase) * 0.04;
+          const dotRadius = ring.size * micro;
+          const alpha = ring.opacity * leaveFade;
 
-        const dx = px - cx;
-        const dy = py - cy;
-        const distance = Math.hypot(dx, dy);
-        const radial = distance / maxRadius;
-        const centerQuiet = 1 - 0.58 * Math.exp(-(distance * distance) / (2 * (maxRadius * 0.24) ** 2));
-        const breath = 0.5 + 0.5 * Math.sin(t * 0.7 + point.phase);
-        const alpha = (0.11 + radial * 0.32 + breath * 0.08) * centerQuiet;
-        const radius = 0.46 + point.jitter * 0.55 + breath * 0.22;
+          context.beginPath();
+          context.arc(x, y, dotRadius, 0, Math.PI * 2);
+          context.fillStyle = `rgba(15, 15, 15, ${alpha.toFixed(3)})`;
+          context.fill();
+        }
+      }
 
+      // Extremely subtle outer falloff ring to keep the composition intentional.
+      context.beginPath();
+      context.arc(cx, cy, outerRadius * (1 + leaveProgress * 0.08), 0, Math.PI * 2);
+      context.lineWidth = 1;
+      context.strokeStyle = `rgba(20, 20, 20, ${(0.04 * leaveFade).toFixed(3)})`;
+      context.stroke();
+
+      // Preserve central whitespace so "180°" remains dominant.
+      context.beginPath();
+      context.arc(cx, cy, outerRadius * 0.37, 0, Math.PI * 2);
+      context.fillStyle = "#ffffff";
+      context.fill();
+
+      // Re-draw a thin internal ring edge for crisp halftone framing.
+      context.beginPath();
+      context.arc(cx, cy, outerRadius * 0.375, 0, Math.PI * 2);
+      context.lineWidth = 1;
+      context.strokeStyle = `rgba(15, 15, 15, ${(0.06 * leaveFade).toFixed(3)})`;
+      context.stroke();
+
+      if (leaveProgress > 0) {
+        // Add restrained outward fade as an intentional transition.
         context.beginPath();
-        context.arc(px, py, radius, 0, Math.PI * 2);
-        context.fillStyle = `rgba(17, 17, 17, ${alpha.toFixed(3)})`;
-        context.fill();
+        context.arc(cx, cy, outerRadius * (1.08 + leaveProgress * 0.2), 0, Math.PI * 2);
+        context.lineWidth = 1;
+        context.strokeStyle = `rgba(15, 15, 15, ${(0.05 * (1 - leaveProgress)).toFixed(3)})`;
+        context.stroke();
       }
 
       animationFrameId = window.requestAnimationFrame(draw);

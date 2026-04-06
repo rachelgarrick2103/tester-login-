@@ -60,7 +60,7 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.95rem;
+  gap: 0.72rem;
   pointer-events: auto;
   text-align: center;
   transform: scale(1);
@@ -76,18 +76,20 @@ input {
   appearance: none;
   border: 0;
   background: transparent;
-  color: var(--ink);
-  font-weight: 400;
-  font-size: clamp(3rem, 11vw, 7.3rem);
-  letter-spacing: 0.055em;
+  color: #101010;
+  font-weight: 300;
+  font-size: clamp(3.4rem, 10.8vw, 7.1rem);
+  letter-spacing: 0.04em;
   line-height: 1;
-  padding: 0.1em 0.12em;
+  padding: 0.08em 0.08em;
   cursor: pointer;
-  transition: opacity 240ms ease;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.08);
+  transition: opacity 240ms ease, transform 320ms ease;
 }
 
 .entry-mark:hover {
-  opacity: 0.78;
+  opacity: 0.82;
+  transform: translateY(-1px);
 }
 
 .entry-mark:focus-visible {
@@ -99,9 +101,9 @@ input {
   border: 0;
   background: transparent;
   text-transform: uppercase;
-  font-size: 0.66rem;
-  letter-spacing: 0.34em;
-  color: #5b5b5b;
+  font-size: 0.62rem;
+  letter-spacing: 0.42em;
+  color: #595959;
   cursor: pointer;
   padding: 0.35rem 0.25rem;
   transition: color 220ms ease, opacity 220ms ease;
@@ -204,7 +206,17 @@ input {
 }
 
 @media (max-width: 640px) {
+  .center-stack {
+    gap: 0.62rem;
+  }
+
+  .entry-mark {
+    font-size: clamp(2.9rem, 16vw, 5rem);
+    letter-spacing: 0.035em;
+  }
+
   .entry-prompt {
-    letter-spacing: 0.28em;
+    letter-spacing: 0.34em;
+    font-size: 0.58rem;
   }
 }

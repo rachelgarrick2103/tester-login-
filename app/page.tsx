@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DotFieldBackground from "../components/dot-field-background";
 
-const AUTO_ENTER_DELAY_MS = 5600;
+const AUTO_ENTER_DELAY_MS = 7000;
 const EXIT_TRANSITION_MS = 900;
 
 export default function EntryPage() {
