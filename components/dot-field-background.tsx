@@ -22,23 +22,24 @@ function clamp(value: number, min: number, max: number) {
 
 function buildRingGrid(width: number, height: number) {
   const shortest = Math.min(width, height);
-  const outerRadius = shortest * 0.345;
-  const innerRadius = outerRadius * 0.43;
+  const outerRadius = shortest * 0.39;
+  const innerRadius = outerRadius * 0.5;
   const thickness = outerRadius - innerRadius;
-  const ringCount = Math.max(12, Math.floor(thickness / 10));
+  const ringCount = Math.max(10, Math.floor(thickness / 14));
   const rings: RingDef[] = [];
 
   for (let i = 0; i < ringCount; i += 1) {
     const t = ringCount <= 1 ? 0 : i / (ringCount - 1);
     const radius = innerRadius + thickness * t;
     const circumference = 2 * Math.PI * radius;
-    const spacing = 16;
+    const spacing = 18.5;
     const dotCount = Math.max(18, Math.round(circumference / spacing));
 
     // Larger, bolder dots weighted toward middle/outer bands.
     const profile = Math.exp(-((t - 0.62) ** 2) / (2 * 0.24 ** 2));
     const size = 2.7 + profile * 4.6;
-    const opacity = clamp(0.72 + profile * 0.22, 0.72, 0.95);
+    const edgeFade = 1 - t * 0.22;
+    const opacity = clamp((0.7 + profile * 0.2) * edgeFade, 0.5, 0.9);
 
     rings.push({
       radius,
@@ -97,7 +98,7 @@ export default function DotFieldBackground({ dispersing }: DotFieldBackgroundPro
 
       const cx = width * 0.5;
       const cy = height * 0.5;
-      const globalBreath = 1 + Math.sin(t * 0.55) * 0.018;
+      const globalBreath = 1 + Math.sin(t * 0.5) * 0.024;
       const leaveExpand = 1 + leaveProgress * 0.22;
       const leaveFade = 1 - leaveProgress * 0.76;
 
@@ -115,7 +116,8 @@ export default function DotFieldBackground({ dispersing }: DotFieldBackgroundPro
 
           const micro = 1 + Math.sin(t * 0.72 + p * Math.PI * 2 + ring.phase) * 0.04;
           const dotRadius = ring.size * micro;
-          const alpha = ring.opacity * leaveFade;
+          const opacityBreath = 0.94 + Math.sin(t * 0.42 + ring.phase) * 0.06;
+          const alpha = ring.opacity * leaveFade * opacityBreath;
 
           context.beginPath();
           context.arc(x, y, dotRadius, 0, Math.PI * 2);
@@ -133,13 +135,13 @@ export default function DotFieldBackground({ dispersing }: DotFieldBackgroundPro
 
       // Preserve central whitespace so "180°" remains dominant.
       context.beginPath();
-      context.arc(cx, cy, outerRadius * 0.37, 0, Math.PI * 2);
+      context.arc(cx, cy, outerRadius * 0.46, 0, Math.PI * 2);
       context.fillStyle = "#ffffff";
       context.fill();
 
       // Re-draw a thin internal ring edge for crisp halftone framing.
       context.beginPath();
-      context.arc(cx, cy, outerRadius * 0.375, 0, Math.PI * 2);
+      context.arc(cx, cy, outerRadius * 0.465, 0, Math.PI * 2);
       context.lineWidth = 1;
       context.strokeStyle = `rgba(15, 15, 15, ${(0.06 * leaveFade).toFixed(3)})`;
       context.stroke();
