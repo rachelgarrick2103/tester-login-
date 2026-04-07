@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DotFieldBackground from "../components/dot-field-background";
 
-const AUTO_ENTER_DELAY_MS = 7000;
 const EXIT_TRANSITION_MS = 900;
 
 export default function EntryPage() {
@@ -21,16 +20,6 @@ export default function EntryPage() {
       router.push("/login");
     }, EXIT_TRANSITION_MS);
   };
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      enterPortal();
-    }, AUTO_ENTER_DELAY_MS);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, []);
 
   return (
     <main className={`gateway${isLeaving ? " is-leaving" : ""}`}>
