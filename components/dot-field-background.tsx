@@ -38,8 +38,8 @@ function buildRingGrid(width: number, height: number) {
     // Larger, bolder dots weighted toward middle/outer bands.
     const profile = Math.exp(-((t - 0.62) ** 2) / (2 * 0.24 ** 2));
     const size = 2.7 + profile * 4.6;
-    const edgeFade = 1 - t * 0.22;
-    const opacity = clamp((0.7 + profile * 0.2) * edgeFade, 0.5, 0.9);
+    const edgeFade = 1 - t * 0.1;
+    const opacity = clamp((0.86 + profile * 0.12) * edgeFade, 0.78, 0.98);
 
     rings.push({
       radius,
@@ -121,29 +121,16 @@ export default function DotFieldBackground({ dispersing }: DotFieldBackgroundPro
 
           context.beginPath();
           context.arc(x, y, dotRadius, 0, Math.PI * 2);
-          context.fillStyle = `rgba(15, 15, 15, ${alpha.toFixed(3)})`;
+          context.fillStyle = `rgba(0, 0, 0, ${alpha.toFixed(3)})`;
           context.fill();
         }
       }
 
-      // Extremely subtle outer falloff ring to keep the composition intentional.
+      // Keep only a very slight outer falloff edge.
       context.beginPath();
       context.arc(cx, cy, outerRadius * (1 + leaveProgress * 0.08), 0, Math.PI * 2);
       context.lineWidth = 1;
-      context.strokeStyle = `rgba(20, 20, 20, ${(0.04 * leaveFade).toFixed(3)})`;
-      context.stroke();
-
-      // Preserve central whitespace so "180°" remains dominant.
-      context.beginPath();
-      context.arc(cx, cy, outerRadius * 0.46, 0, Math.PI * 2);
-      context.fillStyle = "#ffffff";
-      context.fill();
-
-      // Re-draw a thin internal ring edge for crisp halftone framing.
-      context.beginPath();
-      context.arc(cx, cy, outerRadius * 0.465, 0, Math.PI * 2);
-      context.lineWidth = 1;
-      context.strokeStyle = `rgba(15, 15, 15, ${(0.06 * leaveFade).toFixed(3)})`;
+      context.strokeStyle = `rgba(0, 0, 0, ${(0.015 * leaveFade).toFixed(3)})`;
       context.stroke();
 
       if (leaveProgress > 0) {
@@ -151,7 +138,7 @@ export default function DotFieldBackground({ dispersing }: DotFieldBackgroundPro
         context.beginPath();
         context.arc(cx, cy, outerRadius * (1.08 + leaveProgress * 0.2), 0, Math.PI * 2);
         context.lineWidth = 1;
-        context.strokeStyle = `rgba(15, 15, 15, ${(0.05 * (1 - leaveProgress)).toFixed(3)})`;
+        context.strokeStyle = `rgba(0, 0, 0, ${(0.03 * (1 - leaveProgress)).toFixed(3)})`;
         context.stroke();
       }
 
